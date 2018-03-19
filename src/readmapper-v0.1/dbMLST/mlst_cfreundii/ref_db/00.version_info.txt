@@ -1,0 +1,5 @@
+ARIBA run with this command:
+/usr/local/bin/ariba prepareref pubmlstget Citrobacter freundii mlst_cfreundii
+from this directory: /usr/local/readmapper-v0.1/dbMLST
+
+

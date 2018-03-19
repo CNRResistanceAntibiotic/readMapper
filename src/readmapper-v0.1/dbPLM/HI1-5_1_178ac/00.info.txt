@@ -1,0 +1,3 @@
+input fasta file:	/usr/local/readmapper-v0.1/dbPLM/HI1-5_1_178ac.fa
+input tsv file:	/usr/local/readmapper-v0.1/dbPLM/HI1-5_1_178ac.tsv
+genetic_code	11

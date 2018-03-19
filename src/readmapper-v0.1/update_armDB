@@ -1,0 +1,68 @@
+#!/bin/bash
+#Richard Bonnet
+#1/07/2017
+
+usage() { echo "Usage: $0 [-c for card database] [-r for resfinder database] [-a for argannot database] [-n no upload of database file already downloaded] [-i <input_armDB>]" 1>&2; exit 1; }
+
+upload="Y"
+declare -a dtbases
+while getopts "crani:" opt; do
+    case "${opt}" in
+        c)
+            dtbases[0]="card"
+            ;;
+        r)
+            dtbases[1]="resfinder"
+            ;;
+        a)
+            dtbases[2]="argannot"
+            ;;
+        n)
+            upload="N"
+            ;;
+        i)
+            armfile=${OPTARG}
+	    armfile=$(readlink -f ${armfile})
+	    outdir=$(dirname $armfile)
+            ;;                        
+        *)
+            usage
+            ;;
+    esac
+done
+shift $((OPTIND-1))
+
+if [ -z "${armfile}" ] || [ -z "${dtbases}" ]; then
+    usage
+fi
+
+wkdir=`pwd`
+
+echo -e "\ninput : ${armfile}"
+echo    "output directory: ${outdir}"
+echo    "Databases included for updating ${o}: ${dtbases[@]}"
+
+for dtbase in ${dtbases[@]}; do
+	fasfile=$(readlink -f "${dtbase}.fa")
+	tsvfile=$(readlink -f "${dtbase}.tsv")
+
+	echo -e "\nStarting update with ${dtbase} in output directory ${outdir}:"
+	cd ${outdir}
+
+        if [ -e '*.dowload']; then
+		rm -R '*.download'
+	fi	
+        if [ -e ${fasfile} ] && [ "$upload" == 'Y' ]; then 
+        	rm ${fasfile}
+        fi
+	if [ -e ${tsvfile} ] && [ "$upload" == 'Y' ]; then 
+		rm ${tsvfile}
+        fi
+
+        if [ ! -e ${fasfile} ] &&  [ ! -e ${tsvfile} ]; then 
+		ariba getref ${dtbase} ${dtbase}
+        fi
+	
+        /usr/local/readmapper-v0.1/update_armDB.py -fas ${fasfile} -tsv ${tsvfile} -arm ${armfile}
+done
+

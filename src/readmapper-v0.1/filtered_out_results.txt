@@ -1,0 +1,20 @@
+Filter pc_coverage < 80.00
+:VFG001444__aslA
+{'prot_sequence': '.', 'flag': '528', 'pc_identity': '97.12', 'mean_depth': '16.7', 'gene': '1', 'dna_sequence': SeqRecord(seq=Seq('ATGGAATTTTCGTTTTCACCCAAACTTCTTGTTGTTGCTGTCGCCGCCGCTCTT...ATC', SingleLetterAlphabet()), id='VFG001444__aslA.1.139.cluster_36.l15.c4.ctg.1.389.527.+', name='VFG001444__aslA.1.139.cluster_36.l15.c4.ctg.1.389.527.+', description='VFG001444__aslA.1.139.cluster_36.l15.c4.ctg.1.389.527.+', dbxrefs=[]), 'pc_coverage': '9.73', 'ctg_name': 'cluster_36.l15.c4.ctg.1'}
+
+Filter pc_coverage < 80.00
+:VFG012343__sfaH
+{'prot_sequence': '.', 'flag': '528', 'pc_identity': '93.27', 'mean_depth': '41.2', 'gene': '1', 'dna_sequence': SeqRecord(seq=Seq('ATGCGTAAATATTATCCCCTCTTTAAGAAAAGCACCGTCCTCGAGGGCTGTGTT...GCA', SingleLetterAlphabet()), id='VFG012343__sfaH.1.125.cluster_171.l15.c4.ctg.1.518.642.+', name='VFG012343__sfaH.1.125.cluster_171.l15.c4.ctg.1.518.642.+', description='VFG012343__sfaH.1.125.cluster_171.l15.c4.ctg.1.518.642.+', dbxrefs=[]), 'pc_coverage': '71.10', 'ctg_name': 'cluster_171.l15.c4.ctg.1'}
+
+Filter pc_coverage < 80.00
+:VFG000904__vat
+{'prot_sequence': '.', 'flag': '528', 'pc_identity': '98.8', 'mean_depth': '111.5', 'gene': '1', 'dna_sequence': SeqRecord(seq=Seq('TGACCAGAACAGTGCACAGGCACTGCTTGCAAACAGAATTAATAATAAAGGGTA...TAC', SingleLetterAlphabet()), id='VFG000904__vat.1779.2018.cluster_12.l6.c4.ctg.1.1.240.+', name='VFG000904__vat.1779.2018.cluster_12.l6.c4.ctg.1.1.240.+', description='VFG000904__vat.1779.2018.cluster_12.l6.c4.ctg.1.1.240.+', dbxrefs=[]), 'pc_coverage': '54.25', 'ctg_name': 'cluster_12.l6.c4.ctg.1'}
+
+Filter pc_coverage < 80.00
+:VFG012341__sfaS
+{'prot_sequence': '.', 'flag': '528', 'pc_identity': '98.84', 'mean_depth': '12.8', 'gene': '1', 'dna_sequence': SeqRecord(seq=Seq('ATGAAACTGAAAGCTATTATATTGGCCACCGGTCTTATTAACTGTATTGCATTT...TGT', SingleLetterAlphabet()), id='VFG012341__sfaS.1.86.cluster_417.l15.c4.ctg.1.365.450.+', name='VFG012341__sfaS.1.86.cluster_417.l15.c4.ctg.1.365.450.+', description='VFG012341__sfaS.1.86.cluster_417.l15.c4.ctg.1.365.450.+', dbxrefs=[]), 'pc_coverage': '17.48', 'ctg_name': 'cluster_417.l15.c4.ctg.1'}
+
+Filter pc_coverage < 80.00
+:VFG034772__espL4
+{'prot_sequence': '.', 'flag': '528', 'pc_identity': '96.4', 'mean_depth': '96.2', 'gene': '1', 'dna_sequence': SeqRecord(seq=Seq('ATGATTACTCGTATCCCTCGTAGTTCTTTCTCTGCAAATATTAATAATACAGCC...AGT', SingleLetterAlphabet()), id='VFG034772__espL4.1.1140.cluster_570.l15.c30.ctg.1.154.1293.+', name='VFG034772__espL4.1.1140.cluster_570.l15.c30.ctg.1.154.1293.+', description='VFG034772__espL4.1.1140.cluster_570.l15.c30.ctg.1.154.1293.+', dbxrefs=[]), 'pc_coverage': '72.02', 'ctg_name': 'cluster_570.l15.c30.ctg.1'}
+

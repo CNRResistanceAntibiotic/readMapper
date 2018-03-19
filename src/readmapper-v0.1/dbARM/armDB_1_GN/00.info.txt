@@ -1,0 +1,3 @@
+input fasta file:	armDB_1_GN.fa
+input tsv file:	armDB_1_GN.tsv
+genetic_code	11
