@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbPLM/I1-2_1_ardA.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbPLM/I1-2_1_ardA.tsv
-genetic_code	11

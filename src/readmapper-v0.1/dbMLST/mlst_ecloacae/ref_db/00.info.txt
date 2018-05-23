@@ -1,9 +1,0 @@
-input fasta file:	get_mlst/pubmlst_download/dnaA.tfa
-input fasta file:	get_mlst/pubmlst_download/fusA.tfa
-input fasta file:	get_mlst/pubmlst_download/gyrB.tfa
-input fasta file:	get_mlst/pubmlst_download/leuS.tfa
-input fasta file:	get_mlst/pubmlst_download/pyrG.tfa
-input fasta file:	get_mlst/pubmlst_download/rplB.tfa
-input fasta file:	get_mlst/pubmlst_download/rpoB.tfa
-input tsv file:	get_mlst/ref_db/00.auto_metadata.tsv
-genetic_code	11

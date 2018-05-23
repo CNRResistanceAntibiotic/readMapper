@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbPLM/FIIK_1_FIIK.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbPLM/FIIK_1_FIIK.tsv
-genetic_code	11

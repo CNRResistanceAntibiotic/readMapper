@@ -1,3 +1,0 @@
-input fasta file:	virDB_A_enterob.fa
-input tsv file:	virDB_A_enterob.tsv
-genetic_code	11

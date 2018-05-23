@@ -1,5 +1,0 @@
-ARIBA run with this command:
-/usr/local/bin/ariba prepareref pubmlstget Staphylococcus aureus mlst_saureus
-from this directory: /usr/local/readmapper-v0.1/dbMLST
-
-

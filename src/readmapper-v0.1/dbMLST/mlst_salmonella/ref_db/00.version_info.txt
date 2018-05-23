@@ -1,5 +1,0 @@
-ARIBA run with this command:
-/usr/local/bin/ariba prepareref pubmlstget Salmonella enterica mlst_salmonella
-from this directory: /usr/local/readmapper-v0.1/dbMLST
-
-

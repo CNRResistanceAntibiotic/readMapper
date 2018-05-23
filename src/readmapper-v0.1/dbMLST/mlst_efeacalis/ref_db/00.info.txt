@@ -1,9 +1,0 @@
-input fasta file:	mlst_efeacalis/pubmlst_download/gdh.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/gyd.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/pstS.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/gki.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/aroE.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/xpt.tfa
-input fasta file:	mlst_efeacalis/pubmlst_download/yqiL.tfa
-input tsv file:	mlst_efeacalis/ref_db/00.auto_metadata.tsv
-genetic_code	11

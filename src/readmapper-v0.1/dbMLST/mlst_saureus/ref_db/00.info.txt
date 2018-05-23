@@ -1,9 +1,0 @@
-input fasta file:	mlst_saureus/pubmlst_download/arcC.tfa
-input fasta file:	mlst_saureus/pubmlst_download/aroE.tfa
-input fasta file:	mlst_saureus/pubmlst_download/glpF.tfa
-input fasta file:	mlst_saureus/pubmlst_download/gmk.tfa
-input fasta file:	mlst_saureus/pubmlst_download/pta.tfa
-input fasta file:	mlst_saureus/pubmlst_download/tpi.tfa
-input fasta file:	mlst_saureus/pubmlst_download/yqiL.tfa
-input tsv file:	mlst_saureus/ref_db/00.auto_metadata.tsv
-genetic_code	11

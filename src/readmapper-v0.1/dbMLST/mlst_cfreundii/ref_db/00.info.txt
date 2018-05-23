@@ -1,9 +1,0 @@
-input fasta file:	mlst_cfreundii/pubmlst_download/aspC.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/clpX.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/fadD.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/mdh.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/arcA.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/dnaG.tfa
-input fasta file:	mlst_cfreundii/pubmlst_download/lysP.tfa
-input tsv file:	mlst_cfreundii/ref_db/00.auto_metadata.tsv
-genetic_code	11

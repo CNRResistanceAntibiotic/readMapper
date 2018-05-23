@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbPLM/FIC_1_FIC.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbPLM/FIC_1_FIC.tsv
-genetic_code	11

@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbPLM/N-1_1_repN.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbPLM/N-1_1_repN.tsv
-genetic_code	11

@@ -1,0 +1,623 @@
+#!/usr/bin/python
+import argparse
+import os
+import subprocess
+import glob
+import difflib
+from Bio import SeqIO
+from Bio.SeqRecord import SeqRecord
+from Bio.SeqFeature import SeqFeature
+from Bio.SeqFeature import FeatureLocation
+from Bio.Seq import Seq
+
+
+def read_sample(samplefile):
+    sample_list, sample_dic = [], {}
+    with open(samplefile, 'r') as f:
+        for line in f:
+            line = line.strip().split('\t')
+            sample_list.append(line[0])
+            sample_dic[line[0]] = {'genus': line[1].split(' ')[0], 'species': line[1].split(' ')[1]}
+
+    return sample_list, sample_dic
+
+
+def exist_files(files):
+    check = True
+    for filename in files:
+        if not os.path.exists(filename):
+            check = False
+    return check
+
+
+def run_sickle(sickle, in_f, in_r, output_dir, read_type, phred, q, l, g, n, x, force):
+    # https://github.com/najoshi/sickle
+    # sickle se -t sanger -q 30 -l 40 -x -n -g -f in.fastq -o tr.fastq.gz
+    # sickle pe -t illumina -l 80 -q 20 -g -f in_f.fastq -r in_r.fastq \
+    # -o tr_F.fastq.gz -p tr_R.fastq.gz -s tr_S.fastq.gz
+
+    if not os.path.exists(os.path.join(output_dir, 'sickle')):
+        cmd = 'mkdir -p {0}'.format(os.path.join(output_dir, 'sickle'))
+        os.system(cmd)
+
+    if read_type == 'se':
+        trim_list = [os.path.join(output_dir, 'sickle', 'sk_s1_se.fastq.gz')]
+        if not exist_files(trim_list) or force:
+            cmd = '{0} se -t {1} -q {2} -l {3}'.format(sickle, phred, q, l)
+            option = (' -g', ' -x', ' -n')
+            for index, item in enumerate([g, x, n]):
+                if item == 'True':
+                    cmd = cmd + option[index]
+            cmd = cmd + ' -f {0} -o {1} '.format(in_f, trim_list[0])
+            print('\nTrimming unpaired file {0} with sickle...\n'.format(in_f))
+            out_str = subprocess.check_output(cmd, shell=True)
+            print(out_str)
+        else:
+            print('\nTrimming already done!\n')
+    else:
+        trim_list = [os.path.join(output_dir, 'sickle', 'sk_s1_pe.fastq.gz'),
+                     os.path.join(output_dir, 'sickle', 'sk_s2_pe.fastq.gz'),
+                     os.path.join(output_dir, 'sickle', 'sk_s3_up.fastq.gz')]
+        if not exist_files(trim_list) or force:
+            cmd = '%s pe -t %s -q %s -l %s' % (sickle, phred, q, l)
+            option = (' -g', ' -x', ' -n')
+            for index, item in enumerate([g, x, n]):
+                if item == 'True':
+                    cmd = cmd + option[index]
+            cmd = cmd + ' -f {0} -r {1} -o {2} -p {3} -s {4}'.format(in_f, in_r, trim_list[0], trim_list[1],
+                                                                     trim_list[2])
+            print('\nTrimming paired-end files {0} and {1} with sickle...\n'.format(in_f, in_r))
+            out_str = subprocess.check_output(cmd, shell=True)
+            print(out_str)
+        else:
+            print('\nTrimming already done!\n')
+    return trim_list
+
+
+def rename_contig(filename):
+    records = []
+    with open(filename, 'r') as f:
+        for n, rec in enumerate(SeqIO.parse(f, 'fasta')):
+            if len(rec.seq) > 500:
+                rec.id = 'ctg_{0}'.format(n + 1)
+                records.append(rec)
+                # print rec.id, rec.seq
+    with open(filename, 'w') as f:
+        SeqIO.write(records, f, 'fasta')
+
+
+def run_spades(spades, pe_file_1, pe_file_2, s_file, out_dir, force):
+    ass_dir = os.path.join(out_dir, 'spades')
+
+    if not exist_files([os.path.join(ass_dir, 'scaffolds.fasta')]) or force:
+        cmd = '{0} --careful'.format(spades)
+        if pe_file_1 != '' and pe_file_2 != '':
+            cmd = cmd + ' -1 {0} -2 {1}'.format(pe_file_1, pe_file_2)
+
+        if s_file != '':
+            cmd = cmd + ' --s1 {0}'.format(s_file)
+
+        cmd = cmd + ' -o {0}'.format(ass_dir)
+        print('\nAssembly with SPAdes in process...')
+        out_str = subprocess.check_output(cmd, shell=True)
+        print(out_str)
+    else:
+        print('\nAssembly already done!\n')
+    rename_contig(os.path.join(ass_dir, 'scaffolds.fasta'))
+
+
+def run_quast(quast, out_dir, force):
+    if not exist_files([os.path.join(out_dir, 'quast')]) or force:
+        cmd = '{0} {1} -o {2}'.format(quast, os.path.join(out_dir, 'spades', 'scaffolds.fasta'),
+                                      os.path.join(out_dir, 'quast'))
+        print('\nAssembly quality assesment with Quast in process...\n')
+        out_str = subprocess.check_output(cmd, shell=True)
+        print(out_str)
+        cmd = 'rm -Rf'
+        for item in ['corrected', 'K*', 'tmp', 'misc', 'mismatch*']:
+            cmd = cmd + ' {0}'.format(os.path.join(out_dir, 'quast', item))
+        os.system(cmd)
+    else:
+        print('\nQuality assessing already done!\n')
+
+    '''cmd = 'reapr perfectmap assembly.fa short_1.fq short_2.fq 300 perfect; ' \
+          'reapr smaltmap assembly.fa long_1.fq long_2.fq long_mapped.bam;' \
+          'reapr pipeline assembly.fa long_mapped.bam outdir perfect'''
+
+
+def run_prokka(prokka, fasta_file, sample, evalue, genus, species, hmms, force):
+    out_dir = os.path.join(os.path.dirname(os.path.dirname(fasta_file)), 'annotation')
+
+    if not exist_files([out_dir]) or force:
+        print('\nAnnotation of {0} with prokka in {1} as species {2} {3}...'.format(sample, out_dir, genus, species))
+        if hmms != '':
+            hmms = '--hmms {0}'.format(hmms)
+        if genus != '':
+            genus = '--usegenus --genus {0}'.format(genus)
+        if species != '':
+            species = '--species {0}'.format(species)
+        if evalue != '':
+            evalue = '--evalue {0}'.format(evalue)
+
+        cmd = '{0} --outdir {1} --prefix {2} --locustag {3} --metagenome {4} {5} {6} {7} --strain {8} {9} --force ' \
+            .format(prokka, out_dir, sample, sample, hmms, genus, species, evalue, sample, fasta_file)
+        os.system('PATH=${PATH}:/usr/local/prokka-1.11/bin; ' + cmd)
+        # print >> sys.stderr
+        # cmd = 'cp %s %s' % (os.path.join(out_dir, sample+'.gbf'), os.path.join(out_dir, sample+'.gbk'))
+        # os.system(cmd)
+        print('Annotation of {0} done!\n'.format(fasta_file))
+    else:
+        print('\nAnnotation already done for {0}!\n'.format(sample))
+
+
+def read_sequence_file(filename):
+    format_genbank = ""
+    if os.path.splitext(filename)[1] in ['.gbk', '.gb', '.gbf']:
+        format_genbank = 'genbank'
+    elif os.path.splitext(filename)[1] == '.faa':
+        format_genbank = 'fasta'
+    else:
+        print('\nUnknown file format: {0}'.format(os.path.splitext(filename)[1]))
+        print('Please use .gbk, .gbf, .gb or .faa extention\n')
+        exit()
+
+    rec_lst = []
+    # print filename, format
+    with open(filename, 'r') as f:
+        for record in SeqIO.parse(f, format_genbank):
+            rec_lst.append(record)
+            # print record.id, record.description
+
+    print("{0} records from {1}\n".format(len(rec_lst), filename))
+    return rec_lst, format_genbank
+
+
+def parse_rep(an_dic, rep_file):
+    with open(rep_file, 'r') as f:
+        for n, line in enumerate(f):
+            if n > 0:
+                line = line.strip().split('\t')
+                # sample = line[0]
+                id_rep = line[1].split('_')[0]
+                depth = float(line[2])
+                cov = float(line[3])
+                id_ent = float(line[4])
+                seq = line[5]
+                an_dic[id_rep] = {'type': 'misc_feature',
+                                  'label': 'CNR::{0}'.format(id_rep),
+                                  'notes': 'Replicon incompatibility group marker; Sequencing depth: {0}; '
+                                           'Perc. Coverage: {1}; Perc. Identity: {2}'.format(round(depth, 2),
+                                                                                             round(cov, 2),
+                                                                                             round(id_ent, 2)),
+                                  'seq': seq}
+    return an_dic
+
+
+def parse_arm(an_dic, arm_file):
+    fna_records = []
+    with open(arm_file) as f:
+        for rec in SeqIO.parse(f, 'fasta'):
+            fna_records.append(rec)
+            ID = rec.description.split(' func')[0].split('__')[-1]
+            label = rec.description.split(' func')[0].split('__')[3]
+            note = 'func' + rec.description.split(' func')[1]
+            type_seq = 'CDS'
+            seq = str(rec.seq)
+            an_dic[ID] = {'type': type_seq, 'label': 'CNR::{0}'.format(label),
+                          'notes': 'Antibiotic resistance factor; ' + note, 'seq': seq}
+    return an_dic, fna_records
+
+
+def wash_annot(span, rec):
+    rm_features = []
+    for index, rec_feature in enumerate(rec.features):
+        if rec_feature.type == 'CDS':
+            rec_span = range(rec_feature.location.start.position, rec_feature.location.end.position + 1)
+            overlap = [x for x in rec_span if x in span]
+            if len(overlap) / float(len(rec_span)) > 0.1 or len(overlap) / float(len(span)) > 0.1:
+                rm_features.append(index)
+    rm_features.reverse()
+    for index in rm_features:
+        del rec.features[index]
+    return rec
+
+
+def score_match(seq, rec_seq):
+    scoreDic = {}
+    for n, seq in enumerate([seq, str(Seq(seq).reverse_complement())]):
+        if n == 0:
+            strand = 1
+        else:
+            strand = -1
+        for x in range(0, len(rec_seq) - len(seq)):
+            frg = rec_seq[n:n + len(seq)]
+            # best_match = difflib.get_close_matches(seq, [frg], 1, 0.90)[0]
+            score = difflib.SequenceMatcher(None, seq, frg).ratio()
+            if score > 0.90:
+                scoreDic[score] = {'start': x, 'end': x + len(seq), 'strand': strand, 'seq': frg, 'score': score}
+    if scoreDic != {}:
+        score_list = scoreDic.keys()
+        score_list.sort()
+        best_score = scoreDic[score_list[-1]]
+    else:
+        best_score = ''
+    return best_score
+
+
+def edit_gbk(gbk_file, an_dic, out_dir):
+    sample = os.path.splitext(os.path.basename(gbk_file))[0]
+    record_lst = ""
+    no_exact_matches = []
+    if os.path.exists(gbk_file) and an_dic != {}:
+        record_lst, format_genbank = read_sequence_file(gbk_file)
+        for annot in an_dic.keys():
+            data = an_dic[annot]
+            seq = data['seq']
+            rev_seq = str(Seq(seq).reverse_complement())
+            found = False
+            for rec in record_lst:
+                # contig_name = rec.id
+                rec_seq = str(rec.seq)
+                feature = ""
+                start = ""
+                end = ""
+                if rec_seq.find(seq) != -1:
+                    an_dic[annot]['ctg'] = rec.id
+                    start = rec_seq.find(seq)
+                    end = start + len(seq)
+                    strand = 1
+                    try:
+                        translation = Seq(seq).translate(table='Bacterial', cds=True)
+                    except Exception as e:
+                        print(e)
+                        translation = ''
+                    if translation == '':
+                        feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand,
+                                             type=data['type_seq'])
+                        feature.qualifiers['label'] = data['label']
+                        feature.qualifiers['notes'] = data['notes']
+                    else:
+                        feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand,
+                                             type=data['type_seq'])
+                        feature.qualifiers['label'] = data['label']
+                        feature.qualifiers['product'] = data['label']
+                        feature.qualifiers['notes'] = data['notes']
+                        feature.qualifiers['transl_table'] = "11"
+                        feature.qualifiers['codon_start'] = "1"
+                        feature.qualifiers['translation'] = translation
+                    found = True
+
+                elif rec_seq.find(rev_seq) != -1:
+                    an_dic[annot]['ctg'] = rec.id
+                    start = rec_seq.find(rev_seq)
+                    end = start + len(seq)
+                    strand = -1
+                    try:
+                        translation = Seq(seq).translate(table='Bacterial', cds=True)
+                    except Exception as e:
+                        print(e)
+                        translation = ''
+                    if translation == '':
+                        feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand,
+                                             type=data['type_seq'],
+                                             qualifiers={'label': data['label'], 'notes': data['notes']})
+                    else:
+                        feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand,
+                                             type=data['type_seq'],
+                                             qualifiers={'label': data['label'], 'product': data['label'],
+                                                         'notes': data['notes'],
+                                                         'transl_table': '11', 'codon_start': '1',
+                                                         'translation': translation})
+                    found = True
+
+                if found:
+                    span = range(start, end + 1)
+                    if feature.type == 'CDS':
+                        rec = wash_annot(span, rec)
+                    rec.features.append(feature)
+                    rec.features.sort(key=lambda x: x.location.start.position)
+                    break
+
+            if not found:
+                no_exact_matches.append(annot)
+
+    print('No match', no_exact_matches)
+    db = os.path.join(out_dir, 'db.fa')
+    with open(db, 'w') as f:
+        SeqIO.write(record_lst, f, 'fasta')
+
+    tg, bl, qr = '', '', ''
+    for annot in no_exact_matches:
+        data = an_dic[annot]
+        seq = data['seq']
+
+        qr = os.path.join(out_dir, 'qr.fa')
+        with open(qr, 'w') as qf:
+            SeqIO.write([SeqRecord(Seq(seq), id=annot, name=annot, description=annot)], qf, 'fasta')
+
+        bl = os.path.join(out_dir, 'blast.csv')
+        cmd = "/usr/local/bin/usearch61 -usearch_global {0} -db {1} -id 0.9 --strand both -blast6out {2}" \
+            .format(qr, db, bl)
+        os.system(cmd)
+
+        strand = ""
+        start = ""
+        end = ""
+
+        with open(bl, 'r') as f:
+            for line in f:
+                line = line.split('\t')
+                # qr = line[0]
+                tg = line[1]
+                # ident    = float(line[2])
+                qr_start = int(line[6])
+                qr_end = int(line[7])
+                start = int(line[8])
+                end = int(line[9])
+                strand = 1
+                if qr_start > qr_end:
+                    strand = -1
+                if start > end:
+                    start, end = end, start
+                    strand = -1
+
+        try:
+            if strand == 1:
+                translation = Seq(seq).translate(table='Bacterial', cds=True)
+            else:
+                translation = Seq(seq).reverse_complement().translate(table='Bacterial', cds=True)
+            type_seq = 'CDS'
+        except Exception as e:
+            print(e)
+            translation = ''
+            type_seq = 'misc_feature'
+        if translation == '':
+            feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand, type=type_seq,
+                                 qualifiers={'label': data['label'] + ' Warning', 'notes': data['notes']})
+        else:
+            feature = SeqFeature(FeatureLocation(start, end, strand=strand), strand=strand, type=type_seq,
+                                 qualifiers={'label': data['label'] + ' Warning', 'product': data['label'] + ' Warning',
+                                             'notes': data['notes'],
+                                             'transl_table': '11', 'codon_start': '1', 'translation': translation})
+        for rec in record_lst:
+            if rec.id == tg:
+                # span = range(start, end + 1)
+                # if feature.type_seq == 'CDS':
+                #    rec = wash_annot(span, rec)
+                rec.features.append(feature)
+                rec.features.sort(key=lambda x: x.location.start.position)
+                # rec.seq = rec.seq[:start] + seq + rec.seq[end+1:]
+                break
+    if bl != '' or qr != '' or db != '':
+        cmd = 'rm {0} {1} {2}'.format(bl, qr, db)
+        os.system(cmd)
+
+    for rec in record_lst:
+        n = 1
+        for feature in rec.features:
+            if feature.type != 'gene':
+                feature.qualifiers['locus_tag'] = 'L{0}_{1}'.format(sample, n)
+                n += 1
+
+    # cmd = 'rm %s' % os.path.join(outDir, 'annotation', '*')
+    # os.system(cmd)
+
+    for rec in record_lst:
+        outfile = os.path.join(out_dir, 'annotation', '{0}.gbk'.format(rec.id))
+        with open(outfile, 'w') as f:
+            SeqIO.write([rec], f, 'genbank')
+
+    gbk_file = os.path.join(out_dir, '{0}.gbk'.format(sample))
+
+    with open(gbk_file, 'w') as f:
+        SeqIO.write(record_lst, f, 'genbank')
+
+    return gbk_file
+
+
+def edit_fna(gbk_file, fna_records, arm_file, sample):
+    with open(gbk_file, 'r') as f:
+        for rec in SeqIO.parse(f, 'genbank'):
+            ctg = rec.id
+            for feature in rec.features:
+                if 'label' in feature.qualifiers.keys():
+                    if feature.qualifiers['label'][0].startswith('CNR::') and 'Antibiotic resistance factor;' in \
+                            feature.qualifiers['notes'][0]:
+                        name = [sample, ctg, feature.qualifiers['locus_tag'][0]]
+                        dna_seq = str(rec.seq)[feature.location.start:feature.location.end]
+                        if feature.location.strand == -1:
+                            dna_seq = Seq(dna_seq).reverse_complement()
+                        for fna_rec in fna_records:
+                            if str(fna_rec.seq) == str(dna_seq):
+                                fna_rec.id = '__'.join(name + fna_rec.description.split(' func:')[0].split('__')[-2:])
+                                fna_rec.description = 'func:' + fna_rec.description.split(' func:')[1]
+                                break
+
+    with open(arm_file, 'w') as f:
+        SeqIO.write(fna_records, f, 'fasta')
+
+
+def write_faa(arm_file):
+    with open(arm_file, 'r') as f:
+        records = []
+        for rec in SeqIO.parse(f, 'fasta'):
+            try:
+                rec.seq = rec.seq.translate(table='Bacterial', cds=True)
+                records.append(rec)
+            except Exception as e:
+                print(e)
+
+    outfile = os.path.splitext(arm_file)[0] + '.faa'
+    with open(outfile, 'w') as f:
+        SeqIO.write(records, f, 'fasta')
+
+
+def main(arguments):
+    """
+
+    :type arguments: all arguments pass by the python file call
+    """
+    sampleFile = arguments.sampleFile
+    sampleList, sampleDic = read_sample(sampleFile)
+    fqDir = arguments.readsDir
+    wkDir = os.path.abspath(arguments.wkDir)
+
+    force = arguments.force
+
+    for sample in sampleList:
+        # PARSE fastq fastq.gz files
+        print('Sample name: {0}'.format(sample))
+        fastqList = glob.glob(os.path.join(fqDir, '{0}_*.fastq*'.format(sample)))
+        fastqList.sort()
+        if len(fastqList) == 0:
+            print('No fastq or fastq.gz file for {0}'.format(sample))
+            # in_f, in_r = '', ''
+            continue
+        elif len(fastqList) == 1:
+            in_f = fastqList[0]
+            in_r = ''
+        else:
+            in_f, in_r = fastqList[0], fastqList[1]
+
+        if in_r == '' and in_f != '':
+            read_type = 'se'
+        elif in_r != '' and in_f != '':
+            read_type = 'pe'
+        else:
+            read_type = ''
+
+        print('Read files:', fastqList)
+        print('Read type: {0}'.format(read_type))
+
+        # PARSE OUTPUT DIRECTORY
+        out_dir = os.path.join(wkDir, sample)
+        if not os.path.exists(out_dir):
+            cmd = 'mkdir {0}'.format(out_dir)
+            print('\nMake output directory: {0}\n'.format(out_dir))
+            out_str = subprocess.check_output(cmd, shell=True)
+            print(out_str)
+        print('Output directory: {0}'.format(out_dir))
+
+        # SICKLE FOR READ TRIMMING
+        no_trim = arguments.notrim
+        if not no_trim:
+            phred = arguments.phred
+            q = arguments.sickle_q
+            la = arguments.sickle_l
+            g = arguments.sickle_g
+            n = arguments.sickle_n
+            x = arguments.sickle_x
+            sickle = arguments.sickle
+            trim_files = run_sickle(sickle, in_f, in_r, out_dir, read_type, phred, q, la, g, n, x, force)
+        else:
+            trim_files = [in_f, in_r, '']
+
+        # SPADES FOR ASSEMBLY
+        spades = arguments.spades
+        if len(trim_files) == 1:
+            pe_file_1, pe_file_2, s_file = '', '', trim_files[0]
+        else:
+            pe_file_1, pe_file_2, s_file = trim_files[0], trim_files[1], trim_files[2]
+
+        run_spades(spades, pe_file_1, pe_file_2, s_file, out_dir, force)
+
+        # QUAST FOR ASSEMBLY QUALITY
+        quast = arguments.quast
+        run_quast(quast, out_dir, force)
+
+        # ANNOTATION
+        fasta_file = os.path.join(out_dir, 'spades', 'scaffolds.fasta')
+        genus = sampleDic[sample]['genus']
+        species = sampleDic[sample]['species']
+        evalue = arguments.evalue
+        prokka = arguments.prokka
+        hmms = arguments.hmms
+        run_prokka(prokka, fasta_file, sample, evalue, genus, species, hmms, force)
+
+        # MAKE ANNOTATION COMPLET FROM ARIBA
+        if arguments.readmapper:
+            gbk_file = os.path.join(out_dir, 'annotation', '{0}.gbk'.format(sample))
+            an_dic = {}
+            try:
+                rep_file = glob.glob(os.path.join(out_dir, 'results_repDB_*.csv'))[0]
+            except Exception as e:
+                print(e)
+                rep_file = ''
+            if rep_file != '':
+                an_dic = parse_rep(an_dic, rep_file)
+
+            try:
+                arm_file = glob.glob(os.path.join(out_dir, 'results_armDB_*.fna'))[0]
+            except Exception as e:
+                print(e)
+                arm_file = ''
+
+            fna_records = ""
+            if arm_file != '':
+                an_dic, fna_records = parse_arm(an_dic, arm_file)
+
+            gbk_file = edit_gbk(gbk_file, an_dic, out_dir)
+
+            if arm_file != '':
+                edit_fna(gbk_file, fna_records, arm_file, sample)
+                write_faa(arm_file)
+                for ext in ['err', 'fsa', 'gff', 'sqn', 'tbl']:
+                    filename = os.path.join(out_dir, 'annotation', '{0}.{1}'.format(sample, ext))
+                    cmd = 'rm {0}'.format(filename)
+                    os.system(cmd)
+
+
+def version():
+    return "0.0.1"
+
+
+def run():
+    parser = argparse.ArgumentParser(description='Sickle Trimming')
+    # SAMPLE FILE
+    parser.add_argument('-s', '--sampleFile', dest='sampleFile', action="store", help='csv sample file')
+    # READS INPUT FILES
+    parser.add_argument('-r', '--readsDir', dest='readsDir', action="store", help='Fastq or fastq.gz directory')
+    # OUTPUT DIR
+    parser.add_argument('-d', '--wkDir', dest='wkDir', action="store", help='Output directory')
+
+    # TRIMMING WITH SICKLE
+    parser.add_argument('-nT', dest='notrim', action="store_true", default=False, help='Force overwrite')
+    parser.add_argument('--p', dest='phred', action="store", default='sanger', help='sickle option type [sanger]')
+    parser.add_argument('--q', dest='sickle_q', action="store", default='30', help='sickle option quality [30]')
+    parser.add_argument('--l', dest='sickle_l', action="store", default='40', help='sickle option length [40]')
+    parser.add_argument('--g', dest='sickle_g', action="store_true", help='sickle option g')
+    parser.add_argument('--n', dest='sickle_n', action="store_true", help='sickle option n')
+    parser.add_argument('--x', dest='sickle_x', action="store_true", help='sickle option x')
+    parser.add_argument('-sck', '--sickle', dest="sickle", default="/usr/local/sickle/sickle",
+                        help="Sickle location (default: /usr/local/sickle/sickle)")
+
+    # SPADES ASSEMBLY
+    parser.add_argument('-spd', '--spades', dest='spades', action='store',
+                        default='/usr/local/SPAdes-3.10.0/bin/spades.py', help="Python script location")
+    parser.add_argument('-qst', '--quast', dest='quast', action='store', default='/usr/local/quast-4.4/quast.py',
+                        help="Python script location")
+
+    # PROKKA
+    parser.add_argument('-e', '--evalue', dest="evalue", default="1e-30", help="Prokka e value [1e-30]")
+    parser.add_argument('-hmms', '--hmms', dest="hmms", default="/usr/local/prokka-1.11/db/hmm/Resfams.hmm",
+                        help="hmms profil location (default: /usr/local/prokka-1.11/db/hmm/Resfams.hmm)")
+    parser.add_argument('-prk', '--prokka', dest="prokka", default="/usr/local/prokka-1.11/bin/prokka",
+                        help="Prokka location (default: /usr/local/prokka-1.11/bin/prokka)")
+
+    # MAKE ANNOTATION COMPLETE FROM READMAPPER
+    parser.add_argument('-nR', dest='readmapper', action="store_false", default=True,
+                        help='Don\'t add annotation from readmapper')
+
+    # FORCE
+    parser.add_argument('-F', dest='force', action="store_true", default=False, help='Force overwrite')
+
+    # VERSION
+    parser.add_argument('-V', '--version', action='version', version='annotation-' + version(),
+                        help="Prints version number")
+    arguments = parser.parse_args()
+    return arguments
+
+
+if __name__ == "__main__":
+    args = run()
+    main(args)

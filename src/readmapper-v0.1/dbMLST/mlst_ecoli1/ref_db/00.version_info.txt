@@ -1,5 +1,0 @@
-ARIBA run with this command:
-/usr/local/bin/ariba prepareref pubmlstget Escherichia coli#1 mlst_ecoli1_
-from this directory: /usr/local/readmapper-v0.1/dbMLST
-
-

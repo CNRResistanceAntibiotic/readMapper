@@ -1,9 +1,0 @@
-input fasta file:	mlst_salmonella/pubmlst_download/aroC.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/dnaN.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/hemD.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/hisD.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/purE.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/sucA.tfa
-input fasta file:	mlst_salmonella/pubmlst_download/thrA.tfa
-input tsv file:	mlst_salmonella/ref_db/00.auto_metadata.tsv
-genetic_code	11

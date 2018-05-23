@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbREP/repDB_1_GN.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbREP/repDB_1_GN.tsv
-genetic_code	11

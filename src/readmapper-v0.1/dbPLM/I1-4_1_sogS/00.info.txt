@@ -1,3 +1,0 @@
-input fasta file:	/usr/local/readmapper-v0.1/dbPLM/I1-4_1_sogS.fa
-input tsv file:	/usr/local/readmapper-v0.1/dbPLM/I1-4_1_sogS.tsv
-genetic_code	11
