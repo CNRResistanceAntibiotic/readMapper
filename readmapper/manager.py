@@ -61,12 +61,16 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
         if db_type == "mlst":
             parser = parse_mlst_detection.__file__
+
         if db_type == "arm":
             parser = parse_arm_detection.__file__
         if db_type == "rep":
             parser = parse_rep_detection.__file__
         if db_type == "vir":
             parser = parse_vir_detection.__file__
+
+        # give execution permission
+        os.chmod(parser, 0o775)
 
         cmd = parser + " -s {0} -sf {1} -wd {2} -d {3} -st {4} -db {5}".format(sample_id,
                                                                                sample_file, wk_dir,
@@ -80,7 +84,7 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
     finally:
 
-        print("{0} parsing done. Parsing is starting.".format(db_type.upper()), flush=True)
+        print("{0} parsing done.".format(db_type.upper()), flush=True)
 
         os.remove(bash_file)
 

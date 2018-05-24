@@ -80,6 +80,7 @@
 
     RUN    cd /usr/local  &&\
 	   git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
+	   cd readMapper && \
 	   python3 readMapper/setup.py install
     
     
