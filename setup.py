@@ -14,7 +14,7 @@ setup(
     author_email='rbonnet@chu-clermontferrand.fr',
     url='https://github.com/CNRResistanceAntibiotic/readMapper',
     scripts=glob.glob('scripts/*'),
-    install_requires=['pandas', 'docx'],
+    install_requires=['pandas', 'python-docx'],
     license='GPLv3',
     classifiers=[
         'Topic :: Scientific/Engineering :: Bio-Informatics',

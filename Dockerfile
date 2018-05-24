@@ -78,8 +78,9 @@
 
     CMD ariba
 
-    RUN    git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
-           mv readMapper/src/readmapper/ /usr/local/ 
+    RUN    cd /usr/local  &&\
+	   git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
+	   python3 readMapper/setup.py install
     
     
     RUN    apt autoremove --purge --yes && \

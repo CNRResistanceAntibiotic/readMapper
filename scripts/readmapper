@@ -9,10 +9,10 @@ import subprocess
 
 
 def main(args):
-    sample_file = args.sampleFile
-    reads = args.reads
-    wk_dir = args.workDir
-    database = args.database
+    sample_file = os.path.abspath(args.sampleFile)
+    reads = os.path.abspath(args.reads)
+    wk_dir = os.path.abspath(args.workDir)
+    database = os.path.abspath(args.database)
     initial = args.initial
     force = args.force
 
