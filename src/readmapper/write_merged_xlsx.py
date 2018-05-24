@@ -1,4 +1,4 @@
-#!/usr/bin/python
+#!/usr/bin/python3
 import os
 import glob
 import argparse
@@ -41,7 +41,7 @@ def read_rep_results_csv_file(filename, sep='\t'):
                     repDic[dataDic['']] = dataDic
         return repDic
     else:
-        print '\nNo armDB result file {0}\n'.format(filename)
+        print('\nNo armDB result file {0}\n'.format(filename))
         exit(1)
 
 
@@ -99,11 +99,11 @@ def write_merged_arm_dic(merged_arm_dic, merged_mlst_dic, sample_dic, wk_dir, in
 
     outfile = os.path.join(wk_dir, 'merged_results_arm_{0}_{1}.xlsx'.format(datetime.date.today(), initial))
     writer = pd.ExcelWriter(outfile)
-    atb_list = atb_dic.keys()
+    atb_list = list(atb_dic.keys())
     atb_list.sort()
     for n, sheet_name in enumerate(atb_list):
         records = []
-        sampleIDs = atb_dic[sheet_name].keys()
+        sampleIDs = list(atb_dic[sheet_name].keys())
         sampleIDs.sort()
         for sampleID in sampleIDs:
             records.append(atb_dic[sheet_name][sampleID])

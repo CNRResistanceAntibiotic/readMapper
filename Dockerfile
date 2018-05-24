@@ -14,9 +14,6 @@
     # set non-interactive mode
     ENV DEBIAN_FRONTEND noninteractive
 
-
-
-
     #From ariba docker
     RUN apt-get update
     RUN apt-get install --no-install-recommends -y \
@@ -44,17 +41,19 @@
     RUN apt-get update --fix-missing 
     RUN apt-get install --no-install-recommends -y locales
 
+    # Set UTF8 for system
     RUN locale-gen en_US.UTF-8
-
     ENV LANG en_US.UTF-8
     ENV LC_ALL en_US.UTF-8
 
     #Install readmapper dependencies
-    RUN     pip install pandas==0.22.0 && \
-            pip install openpyxl==2.5.1 && \
-            pip install biopython==1.67 && \
-            pip install python-docx && \
-            pip install xlrd
+    RUN     pip install --upgrade pip && \
+	    python3 -m pip install pandas && \
+            python3 -m pip install openpyxl && \
+            python3 -m pip install biopython && \
+            python3 -m pip install python-docx && \
+            python3 -m pip install xlrd && \
+	    python3 -m pip install Pillow
 
 
     RUN    wget -q http://downloads.sourceforge.net/project/bowtie-bio/bowtie2/2.2.9/bowtie2-2.2.9-linux-x86_64.zip &&\
@@ -75,8 +74,7 @@
     CMD ariba
 
     RUN    git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
-           mv readMapper/src/readmapper-v0.1/ /usr/local/ && \
-           ln /usr/local/readmapper-v0.1/readmapper /usr/bin/readmapper
+           mv readMapper/src/readmapper/ /usr/local/ 
     
     
     RUN    apt autoremove --purge --yes && \
