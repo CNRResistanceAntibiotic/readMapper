@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import os
 import argparse
-from prepare_mapping import read_sample_file, read_setting_file
-from parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results, translate_dna
+from readmapper.prepare_mapping import read_sample_file, read_setting_file
+from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results, translate_dna
 from collections import OrderedDict
 import pandas as pd
 import copy

@@ -6,8 +6,7 @@ import collections
 import pandas as pd
 import datetime
 
-from write_docx import read_mlst_results_csv_file
-from write_docx import read_summary_arm_results_csv_file
+from readmapper.write_docx import read_mlst_results_csv_file, read_summary_arm_results_csv_file
 
 
 def read_sample_file(samplefile, sep='\t'):

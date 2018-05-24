@@ -46,14 +46,19 @@
     ENV LANG en_US.UTF-8
     ENV LC_ALL en_US.UTF-8
 
+    #resolve pip3 problem
+    RUN    curl https://bootstrap.pypa.io/get-pip.py -o get-pip.py && \
+           python3 get-pip.py --force-reinstall
+
+
     #Install readmapper dependencies
     RUN     pip install --upgrade pip && \
-	    python3 -m pip install pandas && \
-            python3 -m pip install openpyxl && \
-            python3 -m pip install biopython && \
-            python3 -m pip install python-docx && \
-            python3 -m pip install xlrd && \
-	    python3 -m pip install Pillow
+	    pip install pandas && \
+            pip install openpyxl && \
+            pip install biopython && \
+            pip install python-docx && \
+            pip install xlrd && \
+	    pip install Pillow
 
 
     RUN    wget -q http://downloads.sourceforge.net/project/bowtie-bio/bowtie2/2.2.9/bowtie2-2.2.9-linux-x86_64.zip &&\

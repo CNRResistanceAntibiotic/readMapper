@@ -4,8 +4,8 @@ import csv
 import os
 import subprocess
 import multiprocessing
-from parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, parse_vir_detection
-import write_docx
+from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, parse_vir_detection
+from readmapper import write_docx
 
 
 def get_sample_id_list(sample_file):

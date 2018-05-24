@@ -2,9 +2,7 @@
 # Aurélien Birer
 # 05/2018
 
-import prepare_mapping
-import write_merged_xlsx
-import manager
+from readmapper import prepare_mapping, write_merged_xlsx, manager
 import argparse
 import os
 import subprocess

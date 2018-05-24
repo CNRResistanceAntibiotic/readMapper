@@ -4,8 +4,8 @@ import argparse
 from Bio import SeqIO
 import pandas as pd
 
-from prepare_mapping import read_sample_file, read_setting_file
-from parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results
+from readmapper.prepare_mapping import read_sample_file, read_setting_file
+from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results
 
 
 def load_rep_db(inpfile):

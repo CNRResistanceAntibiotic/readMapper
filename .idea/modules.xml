@@ -2,7 +2,7 @@
 <project version="4">
   <component name="ProjectModuleManager">
     <modules>
-      <module fileurl="file://$PROJECT_DIR$/.idea/readmapper-v0.1.iml" filepath="$PROJECT_DIR$/.idea/readmapper-v0.1.iml" />
+      <module fileurl="file://$PROJECT_DIR$/.idea/readMapper.iml" filepath="$PROJECT_DIR$/.idea/readMapper.iml" />
     </modules>
   </component>
 </project>

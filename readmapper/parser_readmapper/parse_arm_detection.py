@@ -5,8 +5,8 @@ import argparse
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from prepare_mapping import read_sample_file, read_setting_file
-from parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_arm_db
+from readmapper.prepare_mapping import read_sample_file, read_setting_file
+from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_arm_db
 import pandas as pd
 
 

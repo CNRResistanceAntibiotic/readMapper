@@ -2,7 +2,7 @@
 import os
 import argparse
 from collections import OrderedDict as Odict
-from prepare_mapping import read_sample_file, read_setting_file
+from readmapper.prepare_mapping import read_sample_file, read_setting_file
 import pandas as pd
 
 
