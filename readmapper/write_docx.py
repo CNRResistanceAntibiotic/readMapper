@@ -101,7 +101,7 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
             if pc_id >= 90 and cov >= 80:
                 res = res.replace('_', ' ')
                 if snp != '' and snp != 'None':
-                    snp1 = 'variant résistant de '.decode('utf-8')
+                    snp1 = 'variant résistant de '
                     snp2 = '{0} ({1})'.format(res.strip().split(' ')[0], snp)
                     res = snp1 + snp2
                 elif snp == 'None':
