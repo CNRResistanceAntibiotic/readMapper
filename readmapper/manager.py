@@ -6,6 +6,7 @@ import subprocess
 import multiprocessing
 from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, parse_vir_detection
 from readmapper import write_docx
+import sys
 
 
 def get_sample_id_list(sample_file):
@@ -16,9 +17,9 @@ def get_sample_id_list(sample_file):
     """
 
     sample_id_list = []
-    with open(sample_file, 'r') as tsvfile:
-        spamreader = csv.reader(tsvfile, delimiter='\t')
-        for row in spamreader:
+    with open(sample_file, 'r') as tsv_file:
+        spam_reader = csv.reader(tsv_file, delimiter='\t')
+        for row in spam_reader:
             if row:
                 sample_id_list.append(row[0])
 
@@ -99,7 +100,7 @@ def main(args):
     """
 
     # Put executable permission for all users in all file
-    subprocess.call(['chmod', '-R', 'a+x', os.path.basename(os.path.dirname(__file__))])
+    subprocess.call(['chmod', '-R', 'a+x', os.path.realpath(os.path.dirname(sys.argv[0]))])
 
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)

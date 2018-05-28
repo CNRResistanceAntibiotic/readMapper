@@ -2,6 +2,8 @@
 
 # setup.py file install libraries wanted for readmapper
 # launch it with pip install -e .
+
+# Install setuptools if not already present.
 from setuptools import setup, find_packages
 import glob
 
