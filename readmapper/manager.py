@@ -98,6 +98,9 @@ def main(args):
     :return: nothing
     """
 
+    # Put executable permission for all users in all file
+    subprocess.call(['chmod', '-R', 'a+x', os.path.basename(os.path.dirname(__file__))])
+
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     sample_file = args.sampleFile

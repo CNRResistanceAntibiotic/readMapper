@@ -53,12 +53,12 @@
 
     #Install readmapper dependencies
     RUN     pip install --upgrade pip && \
-	    pip install pandas && \
+	        pip install pandas && \
             pip install openpyxl && \
             pip install biopython && \
             pip install python-docx && \
             pip install xlrd && \
-	    pip install Pillow
+	        pip install Pillow
 
 
     RUN    wget -q http://downloads.sourceforge.net/project/bowtie-bio/bowtie2/2.2.9/bowtie2-2.2.9-linux-x86_64.zip &&\
@@ -78,11 +78,11 @@
 
     CMD ariba
 
-    RUN    cd /usr/local  &&\
-	   git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
-	   cd readMapper && \
-	   python3 setup.py install 
+    RUN     cd /usr/local  &&\
+	        git clone https://github.com/CNRResistanceAntibiotic/readMapper.git && \
+	        cd readMapper && \
+	        python3 setup.py install
     
     
-    RUN    apt autoremove --purge --yes && \
-           apt clean
+    RUN     apt autoremove --purge --yes && \
+            apt clean
