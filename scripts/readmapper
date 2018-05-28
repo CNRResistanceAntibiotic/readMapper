@@ -43,6 +43,9 @@ def main(args):
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
+    # Put executable permission for all
+    subprocess.call(['chmod', '-R', 'a+x', os.path.basename(os.path.dirname(dir_path))])
+
     set_file = os.path.join(database, "setting.txt")
 
     #
