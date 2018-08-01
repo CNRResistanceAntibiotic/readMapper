@@ -193,7 +193,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
         print("Write a report in docx file \n", flush=True)
 
-        write_docx.main(wk_dir, initial)
+        write_docx.main(wk_dir, initial, sample_id)
         # cmd = write_docx.__file__ + " -wd {0} -in {1} ".format(os.path.join(wk_dir, sample_id), initial)
         # subprocess.call(cmd, shell=True)
 

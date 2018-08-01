@@ -198,12 +198,14 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
 def pre_main(args):
     wk_dir = args.workdir
     initial = args.initial
+    sample_id = args.sample_id
 
     # execution main
-    main(wk_dir, initial)
+    main(wk_dir, initial, sample_id)
 
 
-def main(wk_dir, initial):
+def main(wk_dir, initial, sample_id):
+    wk_dir = os.path.join(wk_dir, sample_id)
     sampleID = os.path.basename(wk_dir)
     samplefile = os.path.join(wk_dir, 'sample.csv')
     species = read_species(samplefile, sampleID, sep='\t')
@@ -227,6 +229,7 @@ def run():
     parser = argparse.ArgumentParser(description='write_docx.py - Version ' + version())
     parser.add_argument('-wd', '--workdir', dest="workdir", default='COL0027', help='working directory')
     parser.add_argument('-in', '--initial', dest="initial", default='RBO', help="Initials of the user")
+    parser.add_argument('-s', '--sampleID', dest="sample_id", default='CNR1979', help='Sample ID')
     parser.add_argument('-V', '--version', action='version', version='write_docx.py-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
