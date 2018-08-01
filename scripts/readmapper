@@ -83,16 +83,23 @@ def main(args):
 
     print("\nRun the manager : \n", flush=True)
 
+    """
     print(" {0} \n\t -sf {1} \n\t -db {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n".format(manager.__file__,
                                                                                              sample_file, database,
                                                                                              wk_dir,
                                                                                              initial, set_file), flush=True)
+                                                                                             
+    """
 
     try:
+        manager.main(set_file, wk_dir, sample_file, initial, database)
+
+        """
         cmd = "python3 {0} -sf {1} -db {2} -wd {3} -in {4} -set {5}".format(manager.__file__, sample_file, database,
                                                                             wk_dir,
                                                                             initial, set_file)
         subprocess.call(cmd, shell=True)
+        """
     except Exception as e:
         print(e, flush=True)
 
@@ -105,8 +112,11 @@ def main(args):
     print("---------------", flush=True)
 
     try:
+        write_merged_xlsx.main(wk_dir, initial, sample_file)
+        """
         cmd = "python3 {0} -sf {1} -wd {2} -in {3}".format(write_merged_xlsx.__file__, sample_file, wk_dir, initial)
         subprocess.call(cmd, shell=True)
+        """
     except Exception as e:
         print(e, flush=True)
 

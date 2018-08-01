@@ -153,11 +153,18 @@ def write_merged_rep_xls(rep_file_list, wk_dir, initial):
     return outfile
 
 
-def main(args):
+def pre_main(args):
+
     wk_dir = os.path.abspath(args.workdir)
     initial = args.initial
-
     samplefile = args.samplefile
+
+    # execution main
+    main(wk_dir, initial, samplefile)
+
+
+def main(wk_dir, initial, samplefile):
+
     if samplefile == '':
         samplefile = os.path.join(wk_dir, 'sample.csv')
 
@@ -243,7 +250,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='write_merged_xlsx-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':
