@@ -23,7 +23,6 @@ def load_mlst_res(mlst_file, res_dic, sep='\t'):
 
 
 def write_csv_result(res_dic, out_dir):
-
     """
     header = '\t'.join(res_dic.keys())
     data = '\t'.join(res_dic.values())
@@ -41,13 +40,18 @@ def write_csv_result(res_dic, out_dir):
     df.to_csv(os.path.join(out_dir, 'mlst_report.tsv'), sep='\t', index=False)
 
 
-def main(args):
+def pre_main(args):
     sample_id = args.sampleID
     sample_file = args.sampleFile
     setting_file = args.settingFile
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
 
+    # execution main
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir)
+
+
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir):
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -90,7 +94,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='parse_detection-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':

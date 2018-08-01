@@ -560,13 +560,18 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
     writer.save()
 
 
-def main(args):
+def pre_main(args):
     sample_id = args.sampleID
     sample_file = args.sampleFile
     setting_file = args.settingFile
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
     db_path = args.databasePath
+
+    # execution main
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
+
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
 
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
@@ -616,7 +621,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='parse_detection-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':

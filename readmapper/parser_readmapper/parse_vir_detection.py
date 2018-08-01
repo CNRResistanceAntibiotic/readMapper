@@ -417,7 +417,6 @@ def write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename
             data['Strain'] = strain
             vf_name = ''
 
-
             for gene_id in gene_list:
                 vf_name = gene_vir_dic[gene_id]['VF_Name']
                 gene_name = gene_vir_dic[gene_id]['gene_name']
@@ -463,7 +462,7 @@ def write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename
     writer.save()
 
 
-def main(args):
+def pre_main(args):
     sample_id = args.sampleID
     sample_file = args.sampleFile
     setting_file = args.settingFile
@@ -471,6 +470,11 @@ def main(args):
     wk_dir = args.wkDir
     db_path = args.databasePath
 
+    # execution main
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
+
+
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -527,7 +531,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='parse_detection-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':

@@ -4,7 +4,8 @@ import csv
 import os
 import subprocess
 import multiprocessing
-from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, parse_vir_detection
+from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, \
+    parse_vir_detection
 from readmapper import write_docx
 import sys
 
@@ -65,18 +66,25 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
         parser = ""
 
         if db_type == "mlst":
-            parser = parse_mlst_detection.__file__
+            # parser = parse_mlst_detection.__file__
+            parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir)
 
         if db_type == "arm":
-            parser = parse_arm_detection.__file__
+            # parser = parse_arm_detection.__file__
+
+            parse_arm_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path)
+
         if db_type == "rep":
-            parser = parse_rep_detection.__file__
+            # parser = parse_rep_detection.__file__
+            parse_rep_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir)
+
         if db_type == "vir":
-            parser = parse_vir_detection.__file__
+            # parser = parse_vir_detection.__file__
+            parse_vir_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path)
 
         # give execution permission
-        # os.chmod(parser, 0o775)
-
+        #  os.chmod(parser, 0o775)
+        """
         cmd = parser + " -s {0} -sf {1} -wd {2} -d {3} -st {4} -db {5}".format(sample_id,
                                                                                sample_file, wk_dir,
                                                                                db_type,
@@ -84,7 +92,7 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
                                                                                db_path)
         print("Command parsing used : ", cmd, flush=True)
         subprocess.call(cmd, shell=True)
-
+        """
     except Exception as e:
         print(e, flush=True)
 
@@ -98,7 +106,6 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
 
 def pre_main(args):
-
     # Put executable permission for all users in all file
     # subprocess.call(['chmod', '-R', 'a+x', os.path.realpath(os.path.dirname(sys.argv[0]))])
 
@@ -111,8 +118,8 @@ def pre_main(args):
     # execute main
     main(setting_file, wk_dir, sample_file, initial, db_path)
 
-def main(setting_file, wk_dir, sample_file, initial, db_path):
 
+def main(setting_file, wk_dir, sample_file, initial, db_path):
     sample_id_list = get_sample_id_list(sample_file)
 
     count = 0
@@ -186,8 +193,9 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
         print("Write a report in docx file \n", flush=True)
 
-        cmd = write_docx.__file__ + " -wd {0} -in {1} ".format(os.path.join(wk_dir, sample_id), initial)
-        subprocess.call(cmd, shell=True)
+        write_docx.main(wk_dir, initial)
+        # cmd = write_docx.__file__ + " -wd {0} -in {1} ".format(os.path.join(wk_dir, sample_id), initial)
+        # subprocess.call(cmd, shell=True)
 
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", flush=True)
 
