@@ -43,7 +43,7 @@ def mlst_calling(db_dir, sample_id, reads1, reads2, out_dir):
     with open(outfile, 'w') as f:
         f.write('#!/bin/bash\n')
         f.write(cmd)
-    cmd = 'chmod a+x {0}'.format(outfile)
+    # cmd = 'chmod a+x {0}'.format(outfile)
     # os.system(cmd)
 
 
@@ -56,19 +56,30 @@ def gene_calling(db_dir, sample_id, reads1, reads2, out_dir):
         f.write('#!/bin/bash\n')
         f.write('mkdir -p {0}\n'.format(os.path.dirname(out_dir)))
         f.write(cmd)
-    cmd = 'chmod a+x {0}'.format(outfile)
+    # cmd = 'chmod a+x {0}'.format(outfile)
 
     # os.system(cmd)
 
 
-def main(args):
+def pre_main(args):
+
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     reads_dir = args.readsDir
     samplefile = args.sampleFile
-    force = args.force
+    if args.force == "True":
+        print("\nForce the preparation : \n", flush=True)
+        force = args.force
+    else:
+        force = ""
     initial = args.initial
     # nucmer_min_id = args.nucmer_min_id
+
+    # execute main
+    main(setting_file, wk_dir, reads_dir, samplefile, force, initial)
+
+
+def main(setting_file, wk_dir, reads_dir, samplefile, force, initial):
 
     db_dir = os.path.abspath(os.path.join(setting_file, os.pardir))
 
@@ -200,7 +211,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='prepare_mapping-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':

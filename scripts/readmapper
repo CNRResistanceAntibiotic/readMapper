@@ -61,43 +61,21 @@ def main(args):
     print("PREPARE THE JOBS", flush=True)
     print("----------------", flush=True)
 
-    if force == "True":
-        print("\nForce the preparation : \n", flush=True)
-        print(" {0} \n\t -sf {1} \n\t -rd {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n\t -F \n".format(
-            prepare_mapping.__file__, sample_file, reads, wk_dir, initial, set_file), flush=True)
+    print("\nRun the preparation : \n", flush=True)
 
-        try:
-            cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5} -F ".format(prepare_mapping.__file__,
-                                                                                    sample_file, reads, wk_dir, initial,
-                                                                                    set_file)
-            subprocess.call(cmd, shell=True)
-        except Exception as e:
-            print(e, flush=True)
+    try:
+        prepare_mapping.main(set_file, wk_dir, reads, sample_file, force, initial)
+        """
+        cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5}".format(prepare_mapping.__file__, sample_file,
+                                                                            reads, wk_dir, initial, set_file)
+        subprocess.call(cmd, shell=True)
+        """
+    except Exception as e:
+        print(e, flush=True)
 
-        finally:
+    finally:
 
-            print("Preparation mapping done.", flush=True)
-
-
-    else:
-        print("\nRun the preparation : \n", flush=True)
-
-        print(
-            " {0} \n\t -sf {1} \n\t -rd {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n".format(prepare_mapping.__file__,
-                                                                                               sample_file, reads,
-                                                                                               wk_dir, initial,
-                                                                                               set_file), flush=True)
-
-        try:
-            cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5}".format(prepare_mapping.__file__, sample_file,
-                                                                                reads, wk_dir, initial, set_file)
-            subprocess.call(cmd, shell=True)
-        except Exception as e:
-            print(e, flush=True)
-
-        finally:
-
-            print("Preparation mapping done.", flush=True)
+        print("Preparation mapping done.", flush=True)
 
     print("\n-----------------", flush=True)
     print("STARTING THE JOBS", flush=True)

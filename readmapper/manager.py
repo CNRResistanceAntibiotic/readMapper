@@ -97,21 +97,21 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     print("\n*********** ", name, 'Exiting ***************\n', flush=True)
 
 
-def main(args):
-    """
-    Main function
-    :param args: arguments of the parser
-    :return: nothing
-    """
+def pre_main(args):
 
     # Put executable permission for all users in all file
-    subprocess.call(['chmod', '-R', 'a+x', os.path.realpath(os.path.dirname(sys.argv[0]))])
+    # subprocess.call(['chmod', '-R', 'a+x', os.path.realpath(os.path.dirname(sys.argv[0]))])
 
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     sample_file = args.sampleFile
     initial = args.initial
     db_path = args.databasePath
+
+    # execute main
+    main(setting_file, wk_dir, sample_file, initial, db_path)
+
+def main(setting_file, wk_dir, sample_file, initial, db_path):
 
     sample_id_list = get_sample_id_list(sample_file)
 
@@ -210,7 +210,7 @@ def run():
     parser.add_argument('-V', '--version', action='version', version='manager-' + version(),
                         help="Prints version number")
     args = parser.parse_args()
-    main(args)
+    pre_main(args)
 
 
 if __name__ == '__main__':
