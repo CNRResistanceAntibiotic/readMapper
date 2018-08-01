@@ -17,28 +17,28 @@ def main(args):
     force = args.force
 
     if not sample_file:
-        print("Sample file is missing !\n")
-        print(usage)
+        print("Sample file is missing !\n", flush=True)
+        print(usage, flush=True)
         exit(1)
 
     if not reads:
-        print("Reads directory is missing !\n")
-        print(usage)
+        print("Reads directory is missing !\n", flush=True)
+        print(usage, flush=True)
         exit(1)
 
     if not wk_dir:
-        print("Working directory is missing !\n")
-        print(usage)
+        print("Working directory is missing !\n", flush=True)
+        print(usage, flush=True)
         exit(1)
 
     if not database:
-        print("Database directory is missing !\n")
-        print(usage)
+        print("Database directory is missing !\n", flush=True)
+        print(usage, flush=True)
         exit(1)
 
     if not initial:
-        print("Initial is missing !\n")
-        print(usage)
+        print("Initial is missing !\n", flush=True)
+        print(usage, flush=True)
         exit(1)
 
     dir_path = os.path.dirname(os.path.realpath(__file__))
@@ -48,22 +48,23 @@ def main(args):
     #
 
     # print folders/files path
-    print("\nSample file: {0}".format(sample_file))
-    print("Reads directory: {0}".format(reads))
-    print("Work directory: {0}".format(wk_dir))
-    print("DataBase directory: {0}".format(database))
-    print("Initial user: {0}".format(initial))
-    print("Force: {0}".format(force))
-    print("Application run at : {0}\n".format(dir_path))
+    print("\nSample file: {0}".format(sample_file), flush=True)
+    print("Reads directory: {0}".format(reads), flush=True)
+    print("Work directory: {0}".format(wk_dir), flush=True)
+    print("DataBase directory: {0}".format(database), flush=True)
+    print("Setting File: {0}".format(set_file), flush=True)
+    print("Initial user: {0}".format(initial), flush=True)
+    print("Force: {0}".format(force), flush=True)
+    print("Application run at : {0}\n".format(dir_path), flush=True)
 
-    print("----------------")
-    print("PREPARE THE JOBS")
-    print("----------------")
+    print("----------------", flush=True)
+    print("PREPARE THE JOBS", flush=True)
+    print("----------------", flush=True)
 
     if force == "True":
-        print("\nForce the preparation : \n")
+        print("\nForce the preparation : \n", flush=True)
         print(" {0} \n\t -sf {1} \n\t -rd {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n\t -F \n".format(
-            prepare_mapping.__file__, sample_file, reads, wk_dir, initial, set_file))
+            prepare_mapping.__file__, sample_file, reads, wk_dir, initial, set_file), flush=True)
 
         try:
             cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5} -F ".format(prepare_mapping.__file__,
@@ -71,43 +72,43 @@ def main(args):
                                                                                     set_file)
             subprocess.call(cmd, shell=True)
         except Exception as e:
-            print(e)
+            print(e, flush=True)
 
         finally:
 
-            print("Preparation mapping done.")
+            print("Preparation mapping done.", flush=True)
 
 
     else:
-        print("\nRun the preparation : \n")
+        print("\nRun the preparation : \n", flush=True)
 
         print(
             " {0} \n\t -sf {1} \n\t -rd {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n".format(prepare_mapping.__file__,
                                                                                                sample_file, reads,
                                                                                                wk_dir, initial,
-                                                                                               set_file))
+                                                                                               set_file), flush=True)
 
         try:
             cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5}".format(prepare_mapping.__file__, sample_file,
                                                                                 reads, wk_dir, initial, set_file)
             subprocess.call(cmd, shell=True)
         except Exception as e:
-            print(e)
+            print(e, flush=True)
 
         finally:
 
-            print("Preparation mapping done.")
+            print("Preparation mapping done.", flush=True)
 
-    print("\n-----------------")
-    print("STARTING THE JOBS")
-    print("-----------------")
+    print("\n-----------------", flush=True)
+    print("STARTING THE JOBS", flush=True)
+    print("-----------------", flush=True)
 
-    print("\nRun the manager : \n")
+    print("\nRun the manager : \n", flush=True)
 
     print(" {0} \n\t -sf {1} \n\t -db {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n".format(manager.__file__,
                                                                                              sample_file, database,
                                                                                              wk_dir,
-                                                                                             initial, set_file))
+                                                                                             initial, set_file), flush=True)
 
     try:
         cmd = "python3 {0} -sf {1} -db {2} -wd {3} -in {4} -set {5}".format(manager.__file__, sample_file, database,
@@ -115,25 +116,25 @@ def main(args):
                                                                             initial, set_file)
         subprocess.call(cmd, shell=True)
     except Exception as e:
-        print(e)
+        print(e, flush=True)
 
     finally:
 
-        print("Jobs finished.")
+        print("Jobs finished.", flush=True)
 
-    print("\n---------------")
-    print("MERGING RESULTS")
-    print("---------------")
+    print("\n---------------", flush=True)
+    print("MERGING RESULTS", flush=True)
+    print("---------------", flush=True)
 
     try:
         cmd = "python3 {0} -sf {1} -wd {2} -in {3}".format(write_merged_xlsx.__file__, sample_file, wk_dir, initial)
         subprocess.call(cmd, shell=True)
     except Exception as e:
-        print(e)
+        print(e, flush=True)
 
     finally:
 
-        print("Jobs finished.")
+        print("Jobs finished.", flush=True)
 
 
 def version():
@@ -173,134 +174,3 @@ def run():
 
 if __name__ == '__main__':
     run()
-
-"""
-# usage message
-usage()
-{echo
-"Usage: $0 [-s sample file] [-r reads directory] [-d work directory] [-b databases directory] [-i initial of the user] <-F Overwrite output directory (Default=False)>"
-1 > & 2;
-exit
-1;}
-
-# get application directory
-DIR = "$( cd "$(dirname "${BASH_SOURCE[0]}")
-" && pwd )"
-
-# parse args
-force = '0'
-while getopts "s:r:d:b:i:VF" opt; do
-case
-"${opt}" in
-s)
-sampleFile =${OPTARG} \
-    ;;
-r)
-readsDir =${OPTARG} \
-    ;;
-d)
-wkDir =${OPTARG} \
-    ;;
-
-b)
-dbDir =${OPTARG} \
-    ;;
-
-i)
-initial =${OPTARG} \
-    ;;
-F)
-force = '1' \
-    ;;
-* )
-usage \
-    ;;
-esac
-done
-shift $((OPTIND - 1))
-
-# case of one or more args lack
-if [-z "${sampleFile}"] | | [-z "${readsDir}"] | | [-z "${wkDir}"] | | [-z "${dbDir}"] | | [-z "${initial}"];
-then
-usage
-fi
-
-# get folders/files path
-sampleFile =$(readlink - f ${sampleFile})
-readsDir =$(readlink - f ${readsDir})
-wkDir =$(readlink - f ${wkDir})
-dbDir =$(readlink - f ${dbDir})
-setFile =$(readlink - f ${dbDir} / setting.txt)
-
-# print folders/files path
-echo - e
-"\nSample file: ${sampleFile}"
-echo
-"Reads directory: ${readsDir}"
-echo
-"Work directory: ${wkDir}"
-echo
-"DataBase directory: ${dbDir}"
-echo
-"Setting file: ${setFile}"
-echo - e
-"Application run at : ${DIR}\n"
-
-if [ ! -e
-"${sampleFile}"] | | [ ! -e
-"${readsDir}"] | | [ ! -e
-"${wkDir}"] | | [ ! -e
-"${dbDir}"]; then
-usage
-fi
-
-echo
-"----------------"
-echo
-"PREPARE THE JOBS"
-echo
-"----------------"
-# echo $force
-
-if ["${force}" == '1'];
-then
-echo - e
-"\nForce the preparation : \n"
-echo - e
-"${DIR}/prepare_mapping.py \n\t -sf ${sampleFile} \n\t -rd ${readsDir} \n\t -wd ${wkDir} \n\t -in ${initial} \n\t -set ${setFile} \n\t -F \n"
-${DIR} / prepare_mapping.py - sf ${sampleFile} - rd ${readsDir} - wd ${wkDir} - in ${initial} - set ${setFile} - F
-
-else
-echo - e
-"\nRun the preparation : \n"
-echo - e
-"${DIR}/prepare_mapping.py \n\t -sf ${sampleFile} \n\t -rd ${readsDir} \n\t -wd ${wkDir} \n\t -in ${initial} \n\t -set ${setFile} \n"
-${DIR} / prepare_mapping.py - sf ${sampleFile} - rd ${readsDir} - wd ${wkDir} - in ${initial} - set ${setFile}
-fi
-
-echo
-""
-echo
-"-----------------"
-echo
-"STARTING THE JOBS"
-echo
-"-----------------"
-
-echo - e
-"\nRun the manager : \n"
-echo - e
-"${DIR}/manager.py  \n\t -sf ${sampleFile}  \n\t -wd ${wkDir} \n\t -in ${initial} \n\t -set ${setFile} \n\t -db ${dbDir} \n"
-${DIR} / manager.py - sf ${sampleFile} - wd ${wkDir} - in ${initial} - set ${setFile} - db ${dbDir}
-
-echo
-""
-echo
-"---------------"
-echo
-"MERGING RESULTS"
-echo
-"---------------"
-${DIR} / write_merged_xlsx.py - wd ${wkDir} - sf ${sampleFile} - in ${initial}
-
-"""

@@ -162,7 +162,7 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
 
     if st != '':
         document.add_heading('Résultat : Génotypage MLST ', 3)
-        document.add_paragraph('   ~ Sequence Type: st-{0}\n'.format(st))
+        document.add_paragraph('   ~ Sequence Type: ST-{0}\n'.format(st))
 
     document.add_heading(
         'Résultat : Déterminants de la résistance aux 3 principales familles d\'antibiotiques (*)', 3)

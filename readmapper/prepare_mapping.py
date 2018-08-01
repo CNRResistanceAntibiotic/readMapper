@@ -44,7 +44,7 @@ def mlst_calling(db_dir, sample_id, reads1, reads2, out_dir):
         f.write('#!/bin/bash\n')
         f.write(cmd)
     cmd = 'chmod a+x {0}'.format(outfile)
-    os.system(cmd)
+    # os.system(cmd)
 
 
 def gene_calling(db_dir, sample_id, reads1, reads2, out_dir):
@@ -57,7 +57,8 @@ def gene_calling(db_dir, sample_id, reads1, reads2, out_dir):
         f.write('mkdir -p {0}\n'.format(os.path.dirname(out_dir)))
         f.write(cmd)
     cmd = 'chmod a+x {0}'.format(outfile)
-    os.system(cmd)
+
+    # os.system(cmd)
 
 
 def main(args):
@@ -103,13 +104,13 @@ def main(args):
             if work == 'mlst':
                 if 'mlst' in set_dic[species]:
 
-                    print('Prepare ST detection for {0}'.format(sample_id))
+                    print('Prepare ST detection for {0}'.format(sample_id), flush=True)
 
                     mlst_db = set_dic[species][work]
                     mlst_db_path = db_dir + "/dbMLST/{0}_{1}".format(mlst_db[0], mlst_db[1])
 
                     if not os.path.isdir(mlst_db_path):
-                        print('Database directory {0} not found'.format(mlst_db_path))
+                        print('Database directory {0} not found'.format(mlst_db_path), flush=True)
                     else:
                         with open(db_dir + '/info/mlst_trace.log', 'a') as f:
                             f.write('{0}\t{1}\t{2}\t{3}\n'
@@ -120,7 +121,7 @@ def main(args):
             elif work == 'arm':
                 if 'arm' in set_dic[species]:
 
-                    print('Prepare antibiotic resistance gene detection for {0}'.format(sample_id))
+                    print('Prepare antibiotic resistance gene detection for {0}'.format(sample_id), flush=True)
 
                     db_name = set_dic[species][work][0]
                     db_subset = set_dic[species][work][1]
@@ -128,7 +129,7 @@ def main(args):
                     arm_db_path = db_dir + "/dbARM/{0}_{1}".format(db_name, db_subset)
 
                     if not os.path.isdir(arm_db_path):
-                        print('Database directory {0} not found'.format(arm_db_path))
+                        print('Database directory {0} not found'.format(arm_db_path), flush=True)
                     else:
                         with open(db_dir + '/info/arm_trace.log', 'a') as f:
                             f.write('{0}\t{1}\t{2}\t{3}\n'
@@ -140,7 +141,7 @@ def main(args):
             elif work == 'rep':
                 if 'rep' in set_dic[species]:
 
-                    print('Prepare replicon detection for {0} '.format(sample_id))
+                    print('Prepare replicon detection for {0} '.format(sample_id), flush=True)
 
                     db_name = set_dic[species][work][0]
                     db_subset = set_dic[species][work][1]
@@ -148,7 +149,7 @@ def main(args):
                     rep_db_path = db_dir + "/dbREP/{0}_{1}".format(db_name, db_subset)
 
                     if not os.path.isdir(rep_db_path):
-                        print('Database directory {0} not found'.format(rep_db_path))
+                        print('Database directory {0} not found'.format(rep_db_path), flush=True)
                     else:
                         with open(db_dir + '/info/rep_trace.log', 'a') as f:
                             f.write('{0}\t{1}\t{2}\t{3}\n'
@@ -160,7 +161,7 @@ def main(args):
             elif work == 'vir':
                 if 'vir' in set_dic[species]:
 
-                    print('Prepare virulence detection for {0}'.format(sample_id))
+                    print('Prepare virulence detection for {0}'.format(sample_id), flush=True)
 
                     db_name = set_dic[species][work][0]
                     db_subset = set_dic[species][work][1]
@@ -168,7 +169,7 @@ def main(args):
                     vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name, db_subset)
 
                     if not os.path.isdir(vir_db_path):
-                        print('Database directory {0} not found'.format(vir_db_path))
+                        print('Database directory {0} not found'.format(vir_db_path), flush=True)
                     else:
                         with open(db_dir + '/info/vir_trace.log', 'a') as f:
                             f.write('{0}\t{1}\t{2}\t{3}\n'

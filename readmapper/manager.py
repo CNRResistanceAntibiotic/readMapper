@@ -45,8 +45,12 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     print("{0} detection in process for {1}... Take time (~1 to 5 min)".format(db_type.upper(), sample_id), flush=True)
 
     try:
-        cmd = bash_file
-        subprocess.call(cmd, shell=True)
+        with open(bash_file, 'r') as f:
+            read_lines = f.readlines()
+            for line in read_lines:
+                line.rstrip('\n')
+                if "#!/bin/bash" != line:
+                    subprocess.call(line, shell=True)
     except Exception as e:
         print(e, flush=True)
 
@@ -71,13 +75,14 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
             parser = parse_vir_detection.__file__
 
         # give execution permission
-        os.chmod(parser, 0o775)
+        # os.chmod(parser, 0o775)
 
         cmd = parser + " -s {0} -sf {1} -wd {2} -d {3} -st {4} -db {5}".format(sample_id,
                                                                                sample_file, wk_dir,
                                                                                db_type,
                                                                                setting_file,
                                                                                db_path)
+        print("Command parsing used : ", cmd, flush=True)
         subprocess.call(cmd, shell=True)
 
     except Exception as e:

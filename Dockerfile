@@ -86,3 +86,9 @@
     
     RUN     apt autoremove --purge --yes && \
             apt clean
+
+RUN useradd bacteriologie --uid 1001
+
+    # Set entrypoint so container can be used as executable
+    ENTRYPOINT ["readmapper"]
+    CMD ["-h"]
