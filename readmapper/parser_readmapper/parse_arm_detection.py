@@ -318,44 +318,65 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 
 def check_allele(res_dic, dt_base_file):
-    armDic = load_arm_db(dt_base_file)
 
+
+
+    arm_dic = load_arm_db(dt_base_file)
+
+    perfect_nucl_match = 0
+    perfect_prot_match = 0
+
+    # explore each gene result of ariba
     for res_key in res_dic.keys():
         arm_key_1 = res_key.split('__')[0]
         data = res_dic[res_key]
 
-        res_seq = str(data['dna_sequence'].seq)
-        arm_seq = str(armDic[arm_key_1]['dna_sequence'])
+        res_seq_nucl = str(data['dna_sequence'].seq)
+        arm_seq_nucl = str(arm_dic[arm_key_1]['dna_sequence'])
 
-        if res_seq == arm_seq:
-            res_dic = add_res(res_dic, res_key, armDic, arm_key_1)
+        # test if the ariba result matches perfectly with an existing nucl sequence in database
+        if res_seq_nucl == arm_seq_nucl:
+            perfect_nucl_match += 1
+            res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
+            continue
+
+        # lot of case where the truly result is the translated prot sequence against the nucl sequence in database
         else:
+
             found = True
+            # case of gene coding (cds) in ariba result
             if data['gene'] == '1':
-                res_seq = translate_dna(data['dna_sequence'].seq)
-                arm_seq = translate_dna(Seq(armDic[arm_key_1]['dna_sequence']))
-                if str(res_seq) == str(arm_seq) and res_seq != '':
-                    res_dic = update_res(res_dic, res_key, armDic, arm_key_1)
-                elif res_seq != '':
-                    for arm_key_2 in armDic.keys():
-                        arm_seq = translate_dna(Seq(armDic[arm_key_2]['dna_sequence']))
-                        if str(arm_seq) == str(res_seq):
+                res_seq_prot = translate_dna(data['dna_sequence'].seq)
+                arm_seq_prot = translate_dna(Seq(arm_dic[arm_key_1]['dna_sequence']))
+                if str(res_seq_prot) == str(arm_seq_prot) and res_seq_prot != '':
+                    res_dic = update_res(res_dic, res_key, arm_dic, arm_key_1)
+                elif res_seq_prot != '':
+                    for arm_key_2 in arm_dic.keys():
+                        arm_seq_prot = translate_dna(Seq(arm_dic[arm_key_2]['dna_sequence']))
+                        if str(arm_seq_prot) == str(res_seq_prot):
                             found = False
-                            res_dic = update_res(res_dic, res_key, armDic, arm_key_2)
+                            res_dic = update_res(res_dic, res_key, arm_dic, arm_key_2)
                             break
                 if found:
-                    res_dic = add_res(res_dic, res_key, armDic, arm_key_1)
-
+                    res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
+            # case of gene no coding (dna) in ariba result
             else:
-                res_seq = data['dna_sequence'].seq
-                for arm_key_2 in armDic.keys():
-                    arm_seq = armDic[arm_key_2]['dna_sequence']
-                    if str(arm_seq) == str(res_seq):
+                res_seq_prot = data['dna_sequence'].seq
+                for arm_key_2 in arm_dic.keys():
+                    arm_seq_prot = arm_dic[arm_key_2]['dna_sequence']
+                    if str(arm_seq_prot) == str(res_seq_prot):
                         found = False
-                        res_dic = update_res(res_dic, res_key, armDic, arm_key_2)
+                        res_dic = update_res(res_dic, res_key, arm_dic, arm_key_2)
                         break
                 if found:
-                    res_dic = add_res(res_dic, res_key, armDic, arm_key_1)
+                    res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
+
+    print(len(res_dic))
+    print("Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of total results"
+          .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match/len(res_dic)*100), 2)))
+    print("Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total results"
+          .format(os.path.basename(dt_base_file), perfect_prot_match,
+                  round((perfect_prot_match / len(res_dic) * 100), 2)))
 
     return res_dic
 
@@ -600,7 +621,6 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
 
     write_csv_result(res_dic, out_dir, dt_basename)
     write_summary_result(res_dic, out_dir, dt_basename, sample_id)
-
 
 def version():
     return "1.0"

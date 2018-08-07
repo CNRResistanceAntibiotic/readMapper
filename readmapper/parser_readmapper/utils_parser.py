@@ -85,15 +85,15 @@ def translate_dna(dna_object, table='Bacterial', cds=True):
         try:
             prot = dna_object.translate(table=table, cds=cds)
         except Exception as e:
-            # print(e)
-            prot = ''
-        try:
-            prot = dna_object.reverse_complement().translate(table=table, cds=cds)
-        except Exception as e:
-            # print(e)
-            prot = ''
-    finally:
+            # print("Not found in direct strand", e, flush=True)
 
+            # try in reverse complement strand
+            try:
+                prot = dna_object.reverse_complement().translate(table=table, cds=cds)
+            except Exception as e:
+                # print("Not found in direct and reverse complement strand", e, flush=True)
+                prot = ''
+    finally:
         return prot
 
 
@@ -114,6 +114,6 @@ def load_arm_db(inp_file):
                 key = data['key']
                 arm_dic[key] = data
 
-    print('\nLoading of {0} done!'.format(inp_file))
-    print('Number of records: {0}'.format(len(arm_dic.keys())))
+    print('\nLoading of {0} done!'.format(inp_file), flush=True)
+    print('Number of records: {0}'.format(len(arm_dic.keys())), flush=True)
     return arm_dic

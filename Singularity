@@ -1,5 +1,5 @@
 ############################################################
-# Singularity to build BWA 0.7.17 container images
+# Singularity to build readMapper pipeline
 # Based on Ubuntu 16.04
 #   sudo singularity build readMapper.simg Singularity 
 ############################################################
