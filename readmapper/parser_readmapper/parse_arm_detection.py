@@ -348,15 +348,24 @@ def check_allele(res_dic, dt_base_file):
             if data['gene'] == '1':
                 res_seq_prot = translate_dna(data['dna_sequence'].seq)
                 arm_seq_prot = translate_dna(Seq(arm_dic[arm_key_1]['dna_sequence']))
+                # if the ariba result in prot match perfectly with the prot translation of an existing nucl sequence
+                # in database
                 if str(res_seq_prot) == str(arm_seq_prot) and res_seq_prot != '':
                     res_dic = update_res(res_dic, res_key, arm_dic, arm_key_1)
+                # if the match doesnt appear
                 elif res_seq_prot != '':
+                    # for each existing entry in the database
                     for arm_key_2 in arm_dic.keys():
+                        # translate into proteine an entry of the nucl sequence in database
                         arm_seq_prot = translate_dna(Seq(arm_dic[arm_key_2]['dna_sequence']))
+                        # if the ariba result in prot match perfectly with the prot translation of an existing nucl
+                        # sequence in database
                         if str(arm_seq_prot) == str(res_seq_prot):
                             found = False
                             res_dic = update_res(res_dic, res_key, arm_dic, arm_key_2)
                             break
+
+                # if any match founded. the ariba result will be conserved
                 if found:
                     res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
             # case of gene no coding (dna) in ariba result
