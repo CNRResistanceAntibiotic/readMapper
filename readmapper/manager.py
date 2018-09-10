@@ -7,7 +7,6 @@ import multiprocessing
 from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, \
     parse_vir_detection
 from readmapper import write_docx
-import sys
 
 
 def get_sample_id_list(sample_file):

@@ -102,3 +102,7 @@ ENV/
 
 # Singularity image
 readMapper.simg
+Singularity
+
+# Docker
+Dockerfile
