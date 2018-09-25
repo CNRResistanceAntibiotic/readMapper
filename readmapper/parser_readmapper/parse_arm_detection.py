@@ -260,9 +260,8 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
                     f.write('Filter SNP search with no SNP\n:')
                     f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
             except Exception as e:
-                # exception to caracterise
-                a = 1
-                # print(e)
+                print("Warning: Problem to deletion SNP")
+                print(e)
 
     # Deletion of records
     for key in list(set(del_keys)):
@@ -318,8 +317,6 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 
 def check_allele(res_dic, dt_base_file):
-
-
 
     arm_dic = load_arm_db(dt_base_file)
 
@@ -601,7 +598,8 @@ def pre_main(args):
     # execution main
     main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
 
-def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
+
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
 
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
@@ -613,7 +611,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
     sample_dic, sampleList = read_sample_file(sample_file)
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(set_species[dt_base_type][0], set_species[dt_base_type][1])
+    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
     dt_base_file = os.path.join(db_path + "/dbARM/", dt_basename + '.csv')
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
@@ -630,6 +628,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
 
     write_csv_result(res_dic, out_dir, dt_basename)
     write_summary_result(res_dic, out_dir, dt_basename, sample_id)
+
 
 def version():
     return "1.0"

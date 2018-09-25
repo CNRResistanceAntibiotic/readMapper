@@ -1,6 +1,7 @@
 #!/usr/bin/python3
 # -*- coding: utf-8 -*-
 import argparse
+import csv
 import os
 import glob
 import datetime
@@ -43,22 +44,20 @@ def read_summary_arm_results_csv_file(filename, sep='\t'):
         exit(1)
 
 
-def read_mlst_results_csv_file(filename, sep='\t'):
-    if os.path.exists(filename):
-        dataDic = {}
-        with open(filename, 'r') as f:
-            header = ""
-            for n, line in enumerate(f):
-                line = line.strip().split(sep)
-                if n == 0:
-                    header = line
-                elif n == 1:
-                    dataDic = dict(zip(header, line))
+def read_mlst_results_tsv_file(filename_list):
+    data_dic = {}
+    for filename in filename_list:
+        if os.path.exists(filename):
 
-        return dataDic
-    else:
-        print('\nNo MLST result file {0}\n'.format(filename))
-        return ''
+            with open(filename, 'r') as tsv_file:
+
+                reader = csv.DictReader(tsv_file, delimiter='\t')
+                for row in reader:
+                    data_dic[row["mlst_name"]] = row
+
+        else:
+            print('\nNo MLST result file {0}\n'.format(filename_list))
+    return data_dic
 
 
 def read_species(samplefile, sample_id, sep='\t'):
@@ -76,7 +75,7 @@ def read_species(samplefile, sample_id, sep='\t'):
         exit(1)
 
 
-def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
+def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initial):
     atbs = list(amr_dic.keys())
     atbs.sort()
     fres_dict = {}
@@ -147,7 +146,7 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
     met_p1.add_run('   ~ Analyse ')
     met_p1.add_run('in silico ').italic = True
     met_p1.add_run('des séquences génomiques : Bowtie2, CD-HIT, MUMmer et Samtools\n\n')
-    if st != '':
+    if st_list:
         met_p1.add_run('   ~ Bases de données MLST : ')
         if species == 'escherichia coli':
             met_p1.add_run('http://mlst.warwick.ac.uk/mlst\n\n')
@@ -160,14 +159,15 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
         '   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
             .format(arm_db_name.split('_')[0], arm_db_name.split('_')[1], arm_db_name.split('_')[2]))
 
-    if st != '':
+    if st_list:
         document.add_heading('Résultat : Génotypage MLST ', 3)
-        document.add_paragraph('   ~ Sequence Type: ST-{0}\n'.format(st))
+        for st in st_list:
+            document.add_paragraph('   ~ Sequence Type: ST-{0}\n'.format(st))
 
     document.add_heading(
         'Résultat : Déterminants de la résistance aux 3 principales familles d\'antibiotiques (*)', 3)
 
-    frDict = {'Aminoglycoside': "Aminosides", 'Beta-lactam': "Beta-lactamines",
+    fr_dict = {'Aminoglycoside': "Aminosides", 'Beta-lactam': "Beta-lactamines",
               'Quinolone': "Quinolones", 'Colistin': "Colistine",
               'Sulfonamide': "Sulfamides", 'Trimethoprime': "Triméthoprime",
               'Cycline': "Tétracycline",
@@ -179,10 +179,10 @@ def write_docx(wk_dir, sample_id, species, st, amr_dic, arm_db_name, initial):
         try:
             res = fres_dict[func]
             res.sort()
-            res_txt = res_txt + '   ~ {0} : {1}\n'.format(frDict[func], ', '.join(res))
+            res_txt = res_txt + '   ~ {0} : {1}\n'.format(fr_dict[func], ', '.join(res))
             # document.add_paragraph(res_txt)
         except KeyError:
-            res_txt = res_txt + '   ~ {0} :\n'.format(frDict[func])
+            res_txt = res_txt + '   ~ {0} :\n'.format(fr_dict[func])
         document.add_paragraph(res_txt)
         # res_txt = ''
 
@@ -206,19 +206,21 @@ def pre_main(args):
 
 def main(wk_dir, initial, sample_id):
     wk_dir = os.path.join(wk_dir, sample_id)
-    sampleID = os.path.basename(wk_dir)
-    samplefile = os.path.join(wk_dir, 'sample.csv')
-    species = read_species(samplefile, sampleID, sep='\t')
+    sample_id = os.path.basename(wk_dir)
+    sample_file = os.path.join(wk_dir, 'sample.csv')
+    species = read_species(sample_file, sample_id, sep='\t')
     try:
-        ST_filename = glob.glob(os.path.join(wk_dir, 'mlst_report.tsv'))[0]
-        ST_dic = read_mlst_results_csv_file(ST_filename, sep='\t')
-        ST = ST_dic['ST']
+        st_filename_list = glob.glob(os.path.join(wk_dir, 'mlst_report_*.tsv'))
+        st_dic = read_mlst_results_tsv_file(st_filename_list)
+        st_list = []
+        for key, value in st_dic.items():
+            st_list.append(value['ST'])
     except IndexError:
-        ST = ''
+        st_list = ''
     arm_filename = glob.glob(os.path.join(wk_dir, 'summary_results_armDB_*.csv'))[0]
-    arm_DBname = os.path.splitext(os.path.basename(arm_filename).replace('summary_results_', ''))[0]
-    amrDic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
-    write_docx(wk_dir, sampleID, species, ST, amrDic, arm_DBname, initial)
+    arm_db_name = os.path.splitext(os.path.basename(arm_filename).replace('summary_results_', ''))[0]
+    amr_dic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
+    write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initial)
 
 
 def version():

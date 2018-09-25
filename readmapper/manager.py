@@ -26,7 +26,7 @@ def get_sample_id_list(sample_file):
     return sample_id_list
 
 
-def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, db_type):
+def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, db_type, call_ariba_file):
     """
     This function manage the run ariba for mlst database
     :param wk_dir: the working directory
@@ -38,6 +38,8 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     :param db_type : type of the database used
     :return: nothing
     """
+
+    subgroup = call_ariba_file.split("_")[-1].split('.')[0]
 
     name = multiprocessing.current_process().name
     print("\n*********** ", name, 'Starting ***************\n', flush=True)
@@ -66,20 +68,20 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
         if db_type == "mlst":
             # parser = parse_mlst_detection.__file__
-            parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir)
+            parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, subgroup)
 
         if db_type == "arm":
             # parser = parse_arm_detection.__file__
 
-            parse_arm_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path)
+            parse_arm_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path, subgroup)
 
         if db_type == "rep":
             # parser = parse_rep_detection.__file__
-            parse_rep_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir)
+            parse_rep_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, subgroup)
 
         if db_type == "vir":
             # parser = parse_vir_detection.__file__
-            parse_vir_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path)
+            parse_vir_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path, subgroup)
 
         # give execution permission
         #  os.chmod(parser, 0o775)
@@ -147,7 +149,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst"),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst", call_ariba_file),
                         name='mlst {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -158,7 +160,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm"),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm", call_ariba_file),
                         name='arm {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -169,7 +171,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep"),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep", call_ariba_file),
                         name='rep {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -180,7 +182,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir"),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir", call_ariba_file),
                         name='vir {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -193,8 +195,6 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
         print("Write a report in docx file \n", flush=True)
 
         write_docx.main(wk_dir, initial, sample_id)
-        # cmd = write_docx.__file__ + " -wd {0} -in {1} ".format(os.path.join(wk_dir, sample_id), initial)
-        # subprocess.call(cmd, shell=True)
 
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", flush=True)
 

@@ -6,7 +6,7 @@ import collections
 import pandas as pd
 import datetime
 
-from readmapper.write_docx import read_mlst_results_csv_file, read_summary_arm_results_csv_file
+from readmapper.write_docx import read_mlst_results_tsv_file, read_summary_arm_results_csv_file
 
 
 def read_sample_file(samplefile, sep='\t'):
@@ -170,61 +170,61 @@ def main(wk_dir, initial, samplefile):
 
     print('\nData from sample file {0}'.format(samplefile))
 
-    sampleDic = read_sample_file(samplefile, sep='\t')
-    print('Number of samples: {0}\n'.format(len(sampleDic.keys())))
+    sample_dic = read_sample_file(samplefile, sep='\t')
+    print('Number of samples: {0}\n'.format(len(sample_dic.keys())))
 
-    merged_mlstDic = collections.OrderedDict()
-    merged_armDic = collections.OrderedDict()
+    merged_mlst_dic = collections.OrderedDict()
+    merged_arm_dic = collections.OrderedDict()
     vir_file_list = []
     rep_file_list = []
     for data_type in ['mlst', 'arm', 'vir', 'rep']:
-        for sampleID in sampleDic.keys():
+        for sample_id in sample_dic.keys():
             if data_type == 'mlst':
                 try:
-                    ST_filename = glob.glob(os.path.join(wk_dir, sampleID, 'mlst_report.tsv'))[0]
-                    stDic = read_mlst_results_csv_file(ST_filename, sep='\t')
+
+                    st_filename_list = glob.glob(os.path.join(wk_dir, sample_id, 'mlst_report_*.tsv'))
+                    st_dic = read_mlst_results_tsv_file(st_filename_list)
                 except IndexError:
-                    stDic = ''
-                    print('For {0} no MLST data found'.format(sampleID))
-                if stDic != '':
-                    mlst_name = stDic['mlst_name']
-                    try:
-                        merged_mlstDic[mlst_name].append(stDic)
-                    except KeyError:
-                        merged_mlstDic[mlst_name] = [stDic]
+                    st_dic = ''
+                    print('For {0} no MLST data found'.format(sample_id))
+                if st_dic:
+                    for key, value in st_dic.items():
+                        mlst_name = value['mlst_name']
+                        try:
+                            merged_mlst_dic[mlst_name].append(value)
+                        except KeyError:
+                            merged_mlst_dic[mlst_name] = [value]
 
             elif data_type == 'arm':
                 try:
-                    arm_filename = glob.glob(os.path.join(wk_dir, sampleID, 'summary_results_armDB_*.csv'))[0]
-                    armDic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
+                    arm_filename = glob.glob(os.path.join(wk_dir, sample_id, 'summary_results_armDB_*.csv'))[0]
+                    arm_dic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
                 except IndexError:
-                    armDic = ''
-                    print('For {0} no ARM data found'.format(sampleID))
-                if armDic != '':
-                    merged_armDic[sampleID] = armDic
+                    arm_dic = ''
+                    print('For {0} no ARM data found'.format(sample_id))
+                if arm_dic != '':
+                    merged_arm_dic[sample_id] = arm_dic
 
             elif data_type == 'vir':
                 try:
                     vir_file_list = vir_file_list + [
-                        glob.glob(os.path.join(wk_dir, sampleID, 'summary_results_virDB_*.xlsx'))[0]]
-                    # virDBname   = os.path.splitext(os.path.basename(virfilename).replace('summary_results_',''))[0]
+                        glob.glob(os.path.join(wk_dir, sample_id, 'summary_results_virDB_*.xlsx'))[0]]
                 except IndexError:
-                    print('For {0} no VIR data found'.format(sampleID))
+                    print('For {0} no VIR data found'.format(sample_id))
 
             elif data_type == 'rep':
                 try:
                     rep_file_list = rep_file_list + [
-                        glob.glob(os.path.join(wk_dir, sampleID, 'summary_results_repDB_*.xlsx'))[0]]
-                    # repDBname   = os.path.splitext(os.path.basename(repfilename).replace('summary_results_',''))[0]
+                        glob.glob(os.path.join(wk_dir, sample_id, 'summary_results_repDB_*.xlsx'))[0]]
                 except IndexError:
-                    print('For {0} no REP data found'.format(sampleID))
+                    print('For {0} no REP data found'.format(sample_id))
 
     print('')
-    mlst_file = write_merged_mlst_dic(merged_mlstDic, wk_dir, initial)
+    mlst_file = write_merged_mlst_dic(merged_mlst_dic, wk_dir, initial)
     if mlst_file != '':
         print('MLST results were written in {0}\n'.format(mlst_file))
 
-    arm_file = write_merged_arm_dic(merged_armDic, merged_mlstDic, sampleDic, wk_dir, initial)
+    arm_file = write_merged_arm_dic(merged_arm_dic, merged_mlst_dic, sample_dic, wk_dir, initial)
     print('ARM results were written in {0}\n'.format(arm_file))
 
     if rep_file_list:

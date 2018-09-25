@@ -22,7 +22,7 @@ def load_mlst_res(mlst_file, res_dic, sep='\t'):
     return res_dic
 
 
-def write_csv_result(res_dic, out_dir):
+def write_csv_result(res_dic, out_dir, subgroup):
     """
     header = '\t'.join(res_dic.keys())
     data = '\t'.join(res_dic.values())
@@ -33,11 +33,11 @@ def write_csv_result(res_dic, out_dir):
 
     mlst_name = res_dic['mlst_name']
     df = pd.DataFrame(res_dic, index=[res_dic['sample_id'], ])
-    writer = pd.ExcelWriter(os.path.join(out_dir, 'mlst_report.xlsx'))
+    writer = pd.ExcelWriter(os.path.join(out_dir, 'mlst_report_{}.xlsx'.format(subgroup)))
     df.to_excel(writer, mlst_name, index=False)
     writer.save()
 
-    df.to_csv(os.path.join(out_dir, 'mlst_report.tsv'), sep='\t', index=False)
+    df.to_csv(os.path.join(out_dir, 'mlst_report_{0}.tsv'.format(subgroup)), sep='\t', index=False)
 
 
 def pre_main(args):
@@ -51,7 +51,7 @@ def pre_main(args):
     main(sample_id, sample_file, setting_file, dt_base_type, wk_dir)
 
 
-def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir):
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -63,16 +63,18 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir):
     species = sample_dic[sample_id]
     print('\nDetected species: {0}'.format(species))
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(set_species[dt_base_type][0], set_species[dt_base_type][1])
+    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
 
-    tsvFile = os.path.join(out_dir, dt_basename, 'mlst_report.tsv')
+    tsv_file = os.path.join(out_dir, dt_basename, 'mlst_report.tsv')
 
     res_dic = Odict()
     res_dic['sample_id'] = sample_id
     res_dic['mlst_name'] = dt_basename.split('_')[1]
-    res_dic = load_mlst_res(tsvFile, res_dic)
 
-    write_csv_result(res_dic, out_dir)
+
+    res_dic = load_mlst_res(tsv_file, res_dic)
+
+    write_csv_result(res_dic, out_dir, subgroup)
 
 
 def version():

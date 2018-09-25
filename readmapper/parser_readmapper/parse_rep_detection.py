@@ -120,7 +120,7 @@ def pre_main(args):
     main(sample_id, sample_file, setting_file, dt_base_type, wk_dir)
 
 
-def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir):
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -131,7 +131,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir):
     sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(set_species[dt_base_type][0], set_species[dt_base_type][1])
+    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')

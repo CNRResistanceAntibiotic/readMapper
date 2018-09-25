@@ -10,8 +10,8 @@ import copy
 
 def load_vir_db(inp_file):
     print('database used: {0}'.format(inp_file))
-    gene_virDic = {}
-    vf_virDic = {}
+    gene_vir_dic = {}
+    vf_vir_dic = {}
     with open(inp_file, 'r') as f:
         header = ""
         for n, line in enumerate(f):
@@ -25,19 +25,19 @@ def load_vir_db(inp_file):
                 vf = data['VF_Accession']
                 strain = '{0}__{1}__{2}'.format(data['genus'], data['species'], data['strain'].replace(' ', '_'))
 
-                gene_virDic[data['gene_id']] = data
+                gene_vir_dic[data['gene_id']] = data
                 try:
-                    vf_virDic[vf][strain].append(data['gene_id'])
+                    vf_vir_dic[vf][strain].append(data['gene_id'])
                 except KeyError:
-                    if vf not in vf_virDic.keys():
-                        vf_virDic[vf] = {strain: [data['gene_id']]}
+                    if vf not in vf_vir_dic.keys():
+                        vf_vir_dic[vf] = {strain: [data['gene_id']]}
                     else:
-                        vf_virDic[vf][strain] = [data['gene_id']]
+                        vf_vir_dic[vf][strain] = [data['gene_id']]
 
     print('\nLoading of {0} done!'.format(inp_file))
-    print('Number of virulence genes: {0}'.format(len(gene_virDic.keys())))
-    print('Number of virulence factors: {0}'.format(len(vf_virDic)))
-    return gene_virDic, vf_virDic
+    print('Number of virulence genes: {0}'.format(len(gene_vir_dic.keys())))
+    print('Number of virulence factors: {0}'.format(len(vf_vir_dic)))
+    return gene_vir_dic, vf_vir_dic
 
 
 def load_clu_db(cluster_file):
@@ -474,7 +474,7 @@ def pre_main(args):
     main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
 
 
-def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
+def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -485,7 +485,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path):
     sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(set_species[dt_base_type][0], set_species[dt_base_type][1])
+    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
     dt_base_file = os.path.join(db_path + "/dbVIR/", '_'.join(dt_basename.split('_')[:2]) + '.csv')
     cluster_file = os.path.join(db_path + "/dbVIR/", '_'.join(dt_basename.split('_')[:2]) + '.clu')
 
