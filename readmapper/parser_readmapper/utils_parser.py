@@ -98,6 +98,7 @@ def translate_dna(dna_object, table='Bacterial', cds=True):
 
 
 def load_arm_db(inp_file):
+    log_message = ""
     arm_dic = {}
     with open(inp_file, 'r') as f:
         header = ""
@@ -114,6 +115,6 @@ def load_arm_db(inp_file):
                 key = data['key']
                 arm_dic[key] = data
 
-    print('\nLoading of {0} done!'.format(inp_file), flush=True)
-    print('Number of records: {0}'.format(len(arm_dic.keys())), flush=True)
-    return arm_dic
+    log_message = log_message + "\nLoading of {0} done!\n".format(inp_file)
+    log_message = log_message + "Number of records: {0}\n".format(len(arm_dic.keys()))
+    return arm_dic, log_message

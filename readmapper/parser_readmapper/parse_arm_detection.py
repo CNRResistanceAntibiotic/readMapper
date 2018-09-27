@@ -11,6 +11,8 @@ import pandas as pd
 
 
 def load_arm_res(tsv_file, gen_file, seq_file):
+    log_message = ""
+
     if os.path.exists(gen_file):
         gen_file = gunzip_file(gen_file)
     else:
@@ -51,8 +53,8 @@ def load_arm_res(tsv_file, gen_file, seq_file):
                             prot_rec = '.'
                             break
                 if found == '0':
-                    print('Not found:', dt_dic['ctg'])
-                    print(dt_dic)
+                    log_message = log_message + "Not found:{0}\n".format(dt_dic['ctg'])
+                    log_message = log_message + "{0}\n".format(dt_dic)
 
                 ref_len = float(dt_dic['ref_len'])
                 ref_base_assembled = int(dt_dic['ref_base_assembled'])
@@ -176,6 +178,8 @@ def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
 
 
 def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
+    log_message = ""
+
     with open(resu_file, 'a') as f:
         del_keys = []
         del_n_muts = []
@@ -189,18 +193,14 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
                 f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
 
                 # Alarm with id >= 90 and passid > 40
-                if float(res_dic[key]['pc_identity']) >= passid \
-                        and float(res_dic[key]['pc_coverage']) > 50:
-                    print('\n')
-                    print('############################################################')
-                    print('###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###')
-                    print('############################################################')
-                    print('')
-                    print('Record:', key, '\tCoverage:', res_dic[key]['pc_coverage'],
-                          '\tIdentity:', res_dic[key]['pc_identity'], '\tMean depth:', res_dic[key]['mean_depth'])
-                    print('')
-                    print('The record will be deleted in the final results')
-                    print('')
+                if float(res_dic[key]['pc_identity']) >= passid and float(res_dic[key]['pc_coverage']) > 50:
+                    log_message = log_message + "\n############################################################\n"
+                    log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
+                    log_message = log_message + "############################################################\n"
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                                res_dic[key]['mean_depth'])
+                    log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             # filter id percentage < passid
             if float(res_dic[key]['pc_identity']) < passid:
@@ -209,31 +209,24 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
                 f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
 
                 # Alarm if id >= 40 and cov >=75
-                if float(res_dic[key]['pc_identity']) >= 40 \
-                        and float(res_dic[key]['pc_coverage']) >= 80:
-                    print('\n')
-                    print('############################################################')
-                    print('###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###')
-                    print('############################################################')
-                    print('')
-                    print('Record:', key, '\tCoverage:', res_dic[key]['pc_coverage'],
-                          '\tIdentity:', res_dic[key]['pc_identity'], '\tMean depth:', res_dic[key]['mean_depth'])
-                    print('')
-                    print('The record will be deleted in the final results')
-                    print('')
+                if float(res_dic[key]['pc_identity']) >= 40 and float(res_dic[key]['pc_coverage']) >= 80:
+                    log_message = log_message + "\n############################################################\n"
+                    log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
+                    log_message = log_message + "############################################################\n"
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                                res_dic[key]['mean_depth'])
+                    log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= passid \
                     and float(res_dic[key]['pc_coverage']) > passcov:
-                print('\n')
-                print('####################################################################')
-                print('###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###')
-                print('####################################################################')
-                print('')
-                print('Record:', key, '\tCoverage:', res_dic[key]['pc_coverage'],
-                      '\tIdentity:', res_dic[key]['pc_identity'], '\tMean depth:', res_dic[key]['mean_depth'])
-                print('')
-                print('The record will be kept in the final results')
-                print('')
+                log_message = log_message + "\n####################################################################\n"
+                log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
+                log_message = log_message + "####################################################################\n"
+                log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                    .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                            res_dic[key]['mean_depth'])
+                log_message = log_message + "\nThe record will be kept in the final results\n"
 
             # filter
             if res_dic[key]['var_only'] == '1':
@@ -260,13 +253,13 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
                     f.write('Filter SNP search with no SNP\n:')
                     f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
             except Exception as e:
-                print("Warning: Problem to deletion SNP")
-                print(e)
+                log_message = log_message + "Warning: Problem to deletion SNP. {0}".format(e)
 
     # Deletion of records
     for key in list(set(del_keys)):
         del res_dic[key]
-    return res_dic
+
+    return res_dic, log_message
 
 
 def unknown_synonymous(del_n_muts, res_dic, key):
@@ -318,7 +311,7 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 def check_allele(res_dic, dt_base_file):
 
-    arm_dic = load_arm_db(dt_base_file)
+    arm_dic, log_message = load_arm_db(dt_base_file)
 
     perfect_nucl_match = 0
     perfect_prot_match = 0
@@ -377,14 +370,15 @@ def check_allele(res_dic, dt_base_file):
                 if found:
                     res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
 
-    print(len(res_dic))
-    print("Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of total results"
-          .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match/len(res_dic)*100), 2)))
-    print("Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total results"
-          .format(os.path.basename(dt_base_file), perfect_prot_match,
-                  round((perfect_prot_match / len(res_dic) * 100), 2)))
+    log_message = log_message + "len(res_dic)\n"
+    log_message = log_message + "Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of " \
+                                "total results\n"\
+        .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match/len(res_dic)*100), 2))
+    log_message = log_message + "Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total" \
+                                " results\n"\
+        .format(os.path.basename(dt_base_file), perfect_prot_match, round((perfect_prot_match / len(res_dic) * 100), 2))
 
-    return res_dic
+    return res_dic, log_message
 
 
 def add_res(res_dic, res_key, arm_dic, arm_key):
@@ -600,6 +594,7 @@ def pre_main(args):
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
+    log_message =""
 
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
@@ -622,12 +617,16 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
 
     res_dic = load_arm_res(tsv_file, gen_file, seq_file)
 
-    res_dic = filter_results(res_dic, species, resu_file)
+    res_dic, log_message_tmp = filter_results(res_dic, species, resu_file)
+    log_message = log_message + log_message_tmp
 
-    res_dic = check_allele(res_dic, dt_base_file)
+    res_dic, log_message_tmp = check_allele(res_dic, dt_base_file)
+    log_message = log_message + log_message_tmp
 
     write_csv_result(res_dic, out_dir, dt_basename)
     write_summary_result(res_dic, out_dir, dt_basename, sample_id)
+
+    return log_message
 
 
 def version():

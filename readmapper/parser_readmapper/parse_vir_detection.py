@@ -9,7 +9,9 @@ import copy
 
 
 def load_vir_db(inp_file):
-    print('database used: {0}'.format(inp_file))
+
+    log_message = ""
+    log_message = log_message + "database used: {0}\n".format(inp_file)
     gene_vir_dic = {}
     vf_vir_dic = {}
     with open(inp_file, 'r') as f:
@@ -34,10 +36,10 @@ def load_vir_db(inp_file):
                     else:
                         vf_vir_dic[vf][strain] = [data['gene_id']]
 
-    print('\nLoading of {0} done!'.format(inp_file))
-    print('Number of virulence genes: {0}'.format(len(gene_vir_dic.keys())))
-    print('Number of virulence factors: {0}'.format(len(vf_vir_dic)))
-    return gene_vir_dic, vf_vir_dic
+    log_message = log_message + "\nLoading of {0} done!\n".format(inp_file)
+    log_message = log_message + "Number of virulence genes: {0}\n".format(len(gene_vir_dic.keys()))
+    log_message = log_message + "Number of virulence factors: {0}\n".format(len(vf_vir_dic))
+    return gene_vir_dic, vf_vir_dic, log_message
 
 
 def load_clu_db(cluster_file):
@@ -64,6 +66,9 @@ def load_clu_db(cluster_file):
 
 
 def load_vir_res(tsv_file, gen_file, seq_file):
+
+    log_message = ""
+
     if os.path.exists(gen_file):
         gen_file = gunzip_file(gen_file)
     else:
@@ -105,8 +110,8 @@ def load_vir_res(tsv_file, gen_file, seq_file):
                             break
 
                 if found == '0':
-                    print('\nSequence not found:', dt_dic['ctg'])
-                    print(dt_dic)
+                    log_message = log_message + "\nSequence not found:{0}\n".format(dt_dic['ctg'])
+                    log_message = log_message + "{0}\n".format(dt_dic)
                     exit(1)
 
                 ref_len = float(dt_dic['ref_len'])
@@ -129,7 +134,7 @@ def load_vir_res(tsv_file, gen_file, seq_file):
                                     'ref_name': dt_dic['ref_name'],
                                     'mean_depth': dt_dic['ctg_cov'], 'dna_sequence': dna_rec, 'prot_sequence': prot_rec}
 
-    return res_dic
+    return res_dic, log_message
 
 
 def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
@@ -141,6 +146,7 @@ def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
     :param clu_dic:
     :return: The dict of score filtered and updated
     """
+    log_message = ""
     vf_list = []
     for key in res_dic.keys():
         vf_list.append(gene_vir_dic[key]['VF_Accession'])
@@ -176,10 +182,10 @@ def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
                     score_dic[vf] = {key: {'gene_dic': gene_dic}}
                     score_dic[vf][key]['score'] = {'positive_gene': positive_gene, 'total_gene': total_gene}
 
-    # Display the result of virulence dectection
-    print_score_dic(score_dic, vf_vir_dic, gene_vir_dic)
+    # Display the result of virulence detection
+    log_message = log_message + print_score_dic(score_dic, vf_vir_dic, gene_vir_dic)
 
-    print('\nUpdated results:')
+    log_message = log_message + "\nUpdated results:\n"
 
     updated_dic = copy.deepcopy(score_dic)
     vf_list = list(score_dic.keys())
@@ -259,9 +265,8 @@ def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
                 txt = txt + ' gene: {0} [{1}/{2}]'.format(gene_name, pc_identity, pc_coverage)
 
             txt = txt[1:]
-            print('UPDATED : VF_id: {0}\t{1}\tVF_name: {2}\tScore: {3}/{4}\t{5}'.format(vf, strain, vf_name,
-                                                                                        positive_gene,
-                                                                                        total_gene, txt))
+            log_message = log_message + "UPDATED : VF_id: {0}\t{1}\tVF_name: {2}\tScore: {3}/{4}\t{5}\n"\
+                .format(vf, strain, vf_name, positive_gene, total_gene, txt)
 
     rm_dic = {}
     kp_dic = {}
@@ -298,15 +303,15 @@ def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
         for strain in rm_dic[vf]:
             del updated_dic[vf][strain]
             if updated_dic[vf] == {}:
-                print('DELETE VF {0}'.format(vf))
+                log_message = log_message + "DELETE VF {0}\n".format(vf)
                 del updated_dic[vf]
 
-    print('\nPurged results:')
-    print_score_dic(updated_dic, vf_vir_dic, gene_vir_dic)
+    log_message = log_message + "\nPurged results:\n"
+    log_message = log_message + print_score_dic(updated_dic, vf_vir_dic, gene_vir_dic)
 
-    print("\nFiltering finish !\n")
+    log_message = log_message + "\nFiltering finish !\n"
 
-    return updated_dic
+    return updated_dic, log_message
 
 
 def print_score_dic(score_dic, vf_vir_dic, gene_vir_dic):
@@ -317,6 +322,7 @@ def print_score_dic(score_dic, vf_vir_dic, gene_vir_dic):
     :param gene_vir_dic: the dict of gene ref by virulence reference
     :return: nothing
     """
+    log_message = ""
     vf_list = list(score_dic.keys())
     vf_list.sort()
     for i, vf in enumerate(vf_list):
@@ -346,7 +352,9 @@ def print_score_dic(score_dic, vf_vir_dic, gene_vir_dic):
                     txt = txt + 'gene: {0} [{1}/{2}]\t'.format(gene_name, pc_identity, pc_coverage)
 
             txt = txt[:-1]
-            print('RESULTS : {0}\t{1}\t{2}\t{3}\t{4}'.format(vf, strain, vf_name, score, txt))
+            log_message = "RESULTS : {0}\t{1}\t{2}\t{3}\t{4}\n".format(vf, strain, vf_name, score, txt)
+
+    return log_message
 
 
 def write_csv_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename):
@@ -475,6 +483,8 @@ def pre_main(args):
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
+    log_message = ""
+
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -493,22 +503,27 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')
     seq_file = os.path.join(out_dir, dt_basename, 'assembled_seqs.fa.gz')
 
-    res_dic = load_vir_res(tsv_file, gen_file, seq_file)
+    res_dic, log_message_tmp = load_vir_res(tsv_file, gen_file, seq_file)
+    log_message = log_message + log_message_tmp
 
-    print('Number of results: {0}'.format(len(res_dic)))
+    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
 
-    gene_vir_dic, vf_vir_dic = load_vir_db(dt_base_file)
+    gene_vir_dic, vf_vir_dic, log_message_tmp = load_vir_db(dt_base_file)
+    log_message = log_message + log_message_tmp
     clu_dic = load_clu_db(cluster_file)
 
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_vir_results.txt')
     res_dic = filter_results(res_dic, resu_file, passcov=70, passid=70)
 
-    print('Number of parsed results: {0}'.format(len(res_dic)))
+    log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
 
-    res_dic = score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic)
+    res_dic, log_message_tmp = score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic)
+    log_message = log_message + log_message_tmp
 
     write_csv_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename)
     write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename, sample_id)
+
+    return log_message
 
 
 def version():

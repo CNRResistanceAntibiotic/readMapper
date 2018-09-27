@@ -23,13 +23,6 @@ def load_mlst_res(mlst_file, res_dic, sep='\t'):
 
 
 def write_csv_result(res_dic, out_dir, subgroup):
-    """
-    header = '\t'.join(res_dic.keys())
-    data = '\t'.join(res_dic.values())
-    print('')
-    print(header)
-    print(data)
-    """
 
     mlst_name = res_dic['mlst_name']
     df = pd.DataFrame(res_dic, index=[res_dic['sample_id'], ])
@@ -52,6 +45,9 @@ def pre_main(args):
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
+
+    log_message = ""
+
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -61,7 +57,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     set_dic = read_setting_file(setting_file)
     sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
-    print('\nDetected species: {0}'.format(species))
+    log_message = log_message + "\nDetected species: {0}\n".format(species)
     set_species = set_dic[species.lower()]
     dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
 
@@ -71,10 +67,11 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     res_dic['sample_id'] = sample_id
     res_dic['mlst_name'] = dt_basename.split('_')[1]
 
-
     res_dic = load_mlst_res(tsv_file, res_dic)
 
     write_csv_result(res_dic, out_dir, subgroup)
+
+    return log_message
 
 
 def version():

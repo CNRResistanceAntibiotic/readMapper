@@ -42,9 +42,10 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     subgroup = call_ariba_file.split("_")[-1].split('.')[0]
 
     name = multiprocessing.current_process().name
-    print("\n*********** ", name, 'Starting ***************\n', flush=True)
+    log_message = "\n*********** {0} Starting ***************\n".format(name)
 
-    print("{0} detection in process for {1}... Take time (~1 to 5 min)".format(db_type.upper(), sample_id), flush=True)
+    log_message = log_message + "{0} detection in process for {1}... Take time (~1 to 5 min)\n"\
+        .format(db_type.upper(), sample_id)
 
     try:
         with open(bash_file, 'r') as f:
@@ -52,58 +53,45 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
             for line in read_lines:
                 line.rstrip('\n')
                 if "#!/bin/bash" != line:
-                    subprocess.call(line, shell=True)
+                    process = subprocess.Popen(line, shell=True, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)\
+                        .stdout.read()
+                    log_message = log_message + process.decode("utf-8")
     except Exception as e:
-        print(e, flush=True)
+        log_message = log_message + "Exception : {0}\n".format(e)
 
     finally:
+        log_message = log_message + "{0} detection done.\n".format(db_type.upper())
 
-        print("{0} detection done.".format(db_type.upper()), flush=True)
-
-    print("{0} parsing in process for {1}.".format(db_type.upper(), sample_id), flush=True)
+    log_message = log_message + "{0} parsing in process for {1}.\n".format(db_type.upper(), sample_id)
 
     try:
 
-        parser = ""
-
         if db_type == "mlst":
-            # parser = parse_mlst_detection.__file__
-            parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, subgroup)
+            log_message = log_message + parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type,
+                                                                  wk_dir, subgroup)
 
         if db_type == "arm":
-            # parser = parse_arm_detection.__file__
-
-            parse_arm_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path, subgroup)
+            log_message = log_message + parse_arm_detection.main(sample_id, sample_file, setting_file, db_type,
+                                                                 wk_dir, db_path, subgroup)
 
         if db_type == "rep":
-            # parser = parse_rep_detection.__file__
-            parse_rep_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, subgroup)
+            log_message = log_message + parse_rep_detection.main(sample_id, sample_file, setting_file, db_type,
+                                                                 wk_dir, subgroup)
 
         if db_type == "vir":
-            # parser = parse_vir_detection.__file__
-            parse_vir_detection.main(sample_id, sample_file, setting_file, db_type, wk_dir, db_path, subgroup)
+            log_message = log_message + parse_vir_detection.main(sample_id, sample_file, setting_file, db_type,
+                                                                 wk_dir, db_path, subgroup)
 
-        # give execution permission
-        #  os.chmod(parser, 0o775)
-        """
-        cmd = parser + " -s {0} -sf {1} -wd {2} -d {3} -st {4} -db {5}".format(sample_id,
-                                                                               sample_file, wk_dir,
-                                                                               db_type,
-                                                                               setting_file,
-                                                                               db_path)
-        print("Command parsing used : ", cmd, flush=True)
-        subprocess.call(cmd, shell=True)
-        """
     except Exception as e:
-        print(e, flush=True)
+        log_message = log_message + "Exception : {0}\n".format(e)
 
     finally:
 
-        print("{0} parsing done.".format(db_type.upper()), flush=True)
-
+        log_message = log_message + "{0} parsing done.\n".format(db_type.upper())
         os.remove(bash_file)
 
-    print("\n*********** ", name, 'Exiting ***************\n', flush=True)
+    log_message = log_message + "*********** {0} Exiting ***************\n".format(name)
+    print(log_message, flush=True)
 
 
 def pre_main(args):
@@ -147,10 +135,12 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
                 if "__calling__mlst" in call_ariba_file:
                     bash_file = os.path.join(wk_dir, call_ariba_file)
 
+                    schema_mlst = call_ariba_file.split("__calling__mlst_")[1].split(".")[0]
+
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst", call_ariba_file),
-                        name='mlst {0}'.format(sample_id)
+                        name='mlst {0} schema {1}'.format(sample_id, schema_mlst)
                     )
                     jobs.append(p)
                     p.start()

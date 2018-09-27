@@ -8,16 +8,17 @@ from readmapper.prepare_mapping import read_sample_file, read_setting_file
 from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results
 
 
-def load_rep_db(inpfile):
-    print('database used: {0}'.format(inpfile))
+def load_rep_db(inp_file):
+    log_message = ""
+    log_message = log_message + "database used: {0}\n".format(inp_file)
     gene_rep_dic = {}
-    with open(inpfile, 'r') as f:
+    with open(inp_file, 'r') as f:
         for n, rec in enumerate(SeqIO.parse(f, 'fasta')):
             gene_rep_dic[rec.id] = rec
 
-    print('\nLoading of {0} done!'.format(inpfile))
-    print('Number of rep sequence: {0}'.format(len(gene_rep_dic.keys())))
-    return gene_rep_dic
+    log_message = log_message + "\nLoading of {0} done!\n".format(inp_file)
+    log_message = log_message + "Number of rep sequence: {0}\n".format(len(gene_rep_dic.keys()))
+    return gene_rep_dic, log_message
 
 
 def load_rep_res(tsv_file, gen_file, seq_file):
@@ -121,6 +122,9 @@ def pre_main(args):
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
+
+    log_message = ""
+
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -138,15 +142,17 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     seq_file = os.path.join(out_dir, dt_basename, 'assembled_seqs.fa.gz')
 
     res_dic = load_rep_res(tsv_file, gen_file, seq_file)
-    print('Number of results: {0}'.format(len(res_dic)))
+    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
 
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_rep_results.txt')
 
     res_dic = filter_results(res_dic, resu_file, 80, 95)
-    print('Number of parsed results: {0}'.format(len(res_dic)))
+    log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
 
     write_csv_result(res_dic, sample_id, out_dir, dt_basename)
     write_summary_result(res_dic, out_dir, dt_basename, sample_id)
+
+    return log_message
 
 
 def version():
