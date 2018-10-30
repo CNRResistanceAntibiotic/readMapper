@@ -240,7 +240,8 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                         db_name_split = db_name.split("_")
                         db_name_ariba = "{0}_ariba_{1}".format(db_name_split[0], db_name_split[1])
 
-                        arm_db_ariba_path = os.path.join(db_dir, "dbARM", "{0}_{1}".format(db_name_ariba, subsets_name))
+                        arm_db_ariba_path = os.path.join(db_dir, "dbARM", "ariba", "{0}_{1}"
+                                                         .format(db_name_ariba, subsets_name))
 
                         arm_subset_tsv_global_path = os.path.join(db_dir, "dbARM", "{0}_{1}.tsv"
                                                                   .format(db_name, subsets_name))
@@ -270,7 +271,7 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                             print('Database directory {0} not found'.format(arm_db_ariba_path), flush=True)
                             print('The ariba database construction started...', flush=True)
 
-                            db_arm_path = os.path.abspath(os.path.join(db_dir, "dbARM"))
+                            db_arm_path = os.path.abspath(os.path.join(db_dir, "dbARM", 'ariba'))
                             args_f = get_prepareref_seq_ariba(db_subset_list, db_arm_path, db_name, subsets_name)
                             args_m = get_prepareref_tsv_ariba(db_subset_list, db_arm_path, db_name, subsets_name)
 
