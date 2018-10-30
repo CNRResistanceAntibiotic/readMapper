@@ -6,7 +6,7 @@ import collections
 import pandas as pd
 import datetime
 
-from readmapper.write_docx import read_mlst_results_tsv_file, read_summary_arm_results_csv_file
+from readmapper_src.write_docx import read_mlst_results_tsv_file, read_summary_arm_results_csv_file
 
 
 def read_sample_file(samplefile, sep='\t'):
@@ -185,7 +185,7 @@ def main(wk_dir, initial, samplefile):
                     st_filename_list = glob.glob(os.path.join(wk_dir, sample_id, 'mlst_report_*.tsv'))
                     st_dic = read_mlst_results_tsv_file(st_filename_list)
                 except IndexError:
-                    st_dic = ''
+                    st_dic = {}
                     print('For {0} no MLST data found'.format(sample_id))
                 if st_dic:
                     for key, value in st_dic.items():

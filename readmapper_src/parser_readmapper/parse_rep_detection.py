@@ -4,8 +4,8 @@ import argparse
 from Bio import SeqIO
 import pandas as pd
 
-from readmapper.prepare_mapping import read_sample_file, read_setting_file
-from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results
+from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
+from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results
 
 
 def load_rep_db(inp_file):
@@ -83,7 +83,7 @@ def load_rep_res(tsv_file, gen_file, seq_file):
 
 def write_csv_result(res_dic, sample_id, out_dir, dt_basename):
     with open(os.path.join(out_dir, 'results_{0}.csv'.format(dt_basename)), 'w') as f:
-        f.write('sample_id\treplicon\tmean_depth\tpc_coveraget\tpc_identity\tSequence\n')
+        f.write('sample_id\treplicon\tmean_depth\tpc_coverage\tpc_identity\tSequence\n')
         rep_list = list(res_dic.keys())
         rep_list.sort()
         for rep_id in rep_list:
@@ -116,9 +116,10 @@ def pre_main(args):
     setting_file = args.settingFile
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
+    subgroup = args.subGroup
 
     # execution main
-    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir)
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup)
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
@@ -146,7 +147,8 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
 
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_rep_results.txt')
 
-    res_dic = filter_results(res_dic, resu_file, 80, 95)
+    res_dic, log_message_tmp = filter_results(res_dic, resu_file, 80, 95)
+    log_message = log_message + log_message_tmp
     log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
 
     write_csv_result(res_dic, sample_id, out_dir, dt_basename)
@@ -170,6 +172,8 @@ def run():
                         help="Setting file")
     parser.add_argument('-db', '--databasePath', dest="databasePath", default='',
                         help="Database directory path")
+    parser.add_argument('-sg', '--subGroup', dest="subGroup", default='default value in setting.txt',
+                        help="Sub group of gene")
     parser.add_argument('-v', '--verbose', dest="verbose", default="0",
                         help="log process to file. Options are 0 or 1  (default = 0 for no logging)")
     parser.add_argument('-V', '--version', action='version', version='parse_rep_detection-' + version(),

@@ -155,9 +155,8 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
         else:
             met_p1.add_run('https://pubmlst.org/databases\n\n')
 
-    met_p1.add_run(
-        '   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
-            .format(arm_db_name.split('_')[0], arm_db_name.split('_')[1], arm_db_name.split('_')[2]))
+    met_p1.add_run('   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
+                   .format(arm_db_name.split('_')[0], arm_db_name.split('_')[1], arm_db_name.split('_')[2]))
 
     if st_list:
         document.add_heading('Résultat : Génotypage MLST ', 3)
@@ -168,13 +167,14 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
         'Résultat : Déterminants de la résistance aux 3 principales familles d\'antibiotiques (*)', 3)
 
     fr_dict = {'Aminoglycoside': "Aminosides", 'Beta-lactam': "Beta-lactamines",
-              'Quinolone': "Quinolones", 'Colistin': "Colistine",
-              'Sulfonamide': "Sulfamides", 'Trimethoprime': "Triméthoprime",
-              'Cycline': "Tétracycline",
-              'Aminoglycoside|Fluoroquinolone': "Aminosides et fluoroquinolones"}
-    fresults = ['Aminoglycoside', 'Aminoglycoside|Fluoroquinolone', 'Beta-lactam', 'Quinolone',
-                'Colistin']  # ,Sulfonamide','Trimethoprime','Cycline',]
-    for func in fresults:
+               'Quinolone': "Quinolones", 'Colistin': "Colistine",
+               'Sulfonamide': "Sulfamides", 'Trimethoprime': "Triméthoprime",
+               'Cycline': "Tétracycline",
+               'Aminoglycoside|Fluoroquinolone': "Aminosides et fluoroquinolones"}
+    f_results = ['Aminoglycoside', 'Aminoglycoside|Fluoroquinolone', 'Beta-lactam', 'Quinolone', 'Colistin']
+    # ,Sulfonamide','Trimethoprime','Cycline',]
+
+    for func in f_results:
         res_txt = ''
         try:
             res = fres_dict[func]

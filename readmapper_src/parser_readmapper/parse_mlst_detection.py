@@ -2,7 +2,7 @@
 import os
 import argparse
 from collections import OrderedDict as Odict
-from readmapper.prepare_mapping import read_sample_file, read_setting_file
+from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
 import pandas as pd
 
 
@@ -39,9 +39,10 @@ def pre_main(args):
     setting_file = args.settingFile
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
+    subgroup = args.subGroup
 
     # execution main
-    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir)
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup)
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
@@ -88,6 +89,8 @@ def run():
                         help="Setting file")
     parser.add_argument('-db', '--databasePath', dest="databasePath", default='',
                         help="Database directory path")
+    parser.add_argument('-sg', '--subGroup', dest="subGroup", default='default value in setting.txt',
+                        help="Sub group of gene")
     parser.add_argument('-v', '--verbose', dest="verbose", default="0",
                         help="log process to file. Options are 0 or 1  (default = 0 for no logging)")
     parser.add_argument('-V', '--version', action='version', version='parse_detection-' + version(),

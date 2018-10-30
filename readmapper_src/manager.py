@@ -4,9 +4,9 @@ import csv
 import os
 import subprocess
 import multiprocessing
-from readmapper.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, \
+from readmapper_src.parser_readmapper import parse_mlst_detection, parse_arm_detection, parse_rep_detection, \
     parse_vir_detection
-from readmapper import write_docx
+from readmapper_src import write_docx
 
 
 def get_sample_id_list(sample_file):
@@ -26,7 +26,7 @@ def get_sample_id_list(sample_file):
     return sample_id_list
 
 
-def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, db_type, call_ariba_file):
+def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, db_type):
     """
     This function manage the run ariba for mlst database
     :param wk_dir: the working directory
@@ -39,7 +39,7 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     :return: nothing
     """
 
-    subgroup = call_ariba_file.split("_")[-1].split('.')[0]
+    subgroup = os.path.basename(bash_file).split("_")[-1].split('.')[0]
 
     name = multiprocessing.current_process().name
     log_message = "\n*********** {0} Starting ***************\n".format(name)
@@ -95,9 +95,6 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
 
 def pre_main(args):
-    # Put executable permission for all users in all file
-    # subprocess.call(['chmod', '-R', 'a+x', os.path.realpath(os.path.dirname(sys.argv[0]))])
-
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     sample_file = args.sampleFile
@@ -139,7 +136,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst", call_ariba_file),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst"),
                         name='mlst {0} schema {1}'.format(sample_id, schema_mlst)
                     )
                     jobs.append(p)
@@ -150,7 +147,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm", call_ariba_file),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm"),
                         name='arm {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -161,7 +158,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep", call_ariba_file),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep"),
                         name='rep {0}'.format(sample_id)
                     )
                     jobs.append(p)
@@ -172,7 +169,7 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
                     p = multiprocessing.Process(
                         target=manage_ariba,
-                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir", call_ariba_file),
+                        args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir"),
                         name='vir {0}'.format(sample_id)
                     )
                     jobs.append(p)

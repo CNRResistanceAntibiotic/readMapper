@@ -1,8 +1,8 @@
 #!/usr/bin/python3
 import os
 import argparse
-from readmapper.prepare_mapping import read_sample_file, read_setting_file
-from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results, translate_dna
+from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
+from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results, translate_dna
 from collections import OrderedDict
 import pandas as pd
 import copy
@@ -254,9 +254,10 @@ def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
                         score_dic[vf2][key_strain2]['gene_dic'][homolog_gene_id]['pc_coverage']
                     updated_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'] = \
                         score_dic[vf2][key_strain2]['gene_dic'][homolog_gene_id]['pc_identity']
-                    updated_dic[vf][strain]['gene_dic'][gene_id]['homolog'] = \
-                        'VF_id:{0},VF_name:{1},genus:{2},species:{3},strain:{4},gene_id:{5},gene_name:{6}' \
-                            .format(vf2, vf2_name, genus2, species2, strain2, homolog_gene_id, gene2_name)
+                    updated_dic[vf][strain]['gene_dic'][gene_id]['homolog'] = 'VF_id:{0},VF_name:{1},genus:{2},' \
+                                                                              'species:{3},strain:{4},gene_id:{5},' \
+                                                                              'gene_name:{6}'.\
+                        format(vf2, vf2_name, genus2, species2, strain2, homolog_gene_id, gene2_name)
                     pc_coverage = str(updated_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'])
                     pc_identity = str(updated_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
                     updated_dic[vf][strain]['score']['positive_gene'] += 1
@@ -423,7 +424,6 @@ def write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename
             data = OrderedDict()
             # data['sample_id'] = sample_id
             data['Strain'] = strain
-            vf_name = ''
 
             for gene_id in gene_list:
                 vf_name = gene_vir_dic[gene_id]['VF_Name']
@@ -477,9 +477,10 @@ def pre_main(args):
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
     db_path = args.databasePath
+    subgroup = args.subGroup
 
     # execution main
-    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup)
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
@@ -513,8 +514,8 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     clu_dic = load_clu_db(cluster_file)
 
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_vir_results.txt')
-    res_dic = filter_results(res_dic, resu_file, passcov=70, passid=70)
-
+    res_dic, log_message_tmp = filter_results(res_dic, resu_file, pass_cov=70, pass_id=70)
+    log_message = log_message + log_message_tmp
     log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
 
     res_dic, log_message_tmp = score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic)
@@ -539,6 +540,8 @@ def run():
                         help="Working directory")
     parser.add_argument('-st', '--settingFile', dest="settingFile", default='/usr/local/readmapper-v0.1/setting.txt',
                         help="Setting file")
+    parser.add_argument('-sg', '--subGroup', dest="subGroup", default='default value in setting.txt',
+                        help="Sub group of gene")
     parser.add_argument('-db', '--databasePath', dest="databasePath", default='',
                         help="Database directory path")
     parser.add_argument('-v', '--verbose', dest="verbose", default="0",

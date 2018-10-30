@@ -5,8 +5,8 @@ import argparse
 from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
-from readmapper.prepare_mapping import read_sample_file, read_setting_file
-from readmapper.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_arm_db
+from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
+from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_arm_db
 import pandas as pd
 
 
@@ -157,13 +157,13 @@ def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
         total_depth = smtls_total_depth.split(';')[i]
 
         if ',' not in nt:
-            # perc = int(depth) / float(total_depth)
+            # p_depth = int(depth) / float(total_depth)
             txt = txt + '|{0}[{1}/{2}]'.format(nt, depth, total_depth)
         else:
             for j in range(0, len(nt.split(','))):
                 n = nt.split(',')[j]
                 d = depth.split(',')[j]
-                # perc = int(d) / float(total_depth)
+                # p_depth = int(d) / float(total_depth)
                 if j == 0:
                     txt = txt + '|{0}[{1}/{2}]'.format(n, d, total_depth)
                 else:
@@ -177,7 +177,7 @@ def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
     return txt
 
 
-def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
+def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
     log_message = ""
 
     with open(resu_file, 'a') as f:
@@ -186,26 +186,26 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
         del_no_muts = []
         for key in res_dic.keys():
 
-            # filter target coverage < passcov
-            if float(res_dic[key]['pc_coverage']) < passcov:
+            # filter target coverage < pass_cov
+            if float(res_dic[key]['pc_coverage']) < pass_cov:
                 del_keys.append(key)
-                f.write('Filter pc_coverage < {0}\n:'.format(passcov))
+                f.write('Filter pc_coverage < {0}\n:'.format(pass_cov))
                 f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
 
-                # Alarm with id >= 90 and passid > 40
-                if float(res_dic[key]['pc_identity']) >= passid and float(res_dic[key]['pc_coverage']) > 50:
+                # Alarm with id >= 90 and pass_id > 40
+                if float(res_dic[key]['pc_identity']) >= pass_id and float(res_dic[key]['pc_coverage']) > 50:
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
                         .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
                                 res_dic[key]['mean_depth'])
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
-            # filter id percentage < passid
-            if float(res_dic[key]['pc_identity']) < passid:
+            # filter id percentage < pass_id
+            if float(res_dic[key]['pc_identity']) < pass_id:
                 del_keys.append(key)
-                f.write('Filter pc_identity < {0}\n:'.format(passid))
+                f.write('Filter pc_identity < {0}\n:'.format(pass_id))
                 f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
 
                 # Alarm if id >= 40 and cov >=75
@@ -213,17 +213,17 @@ def filter_results(res_dic, species, resu_file, passcov=80, passid=80):
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
                         .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
                                 res_dic[key]['mean_depth'])
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
-            if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= passid \
-                    and float(res_dic[key]['pc_coverage']) > passcov:
+            if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= pass_id \
+                    and float(res_dic[key]['pc_coverage']) > pass_cov:
                 log_message = log_message + "\n####################################################################\n"
                 log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
                 log_message = log_message + "####################################################################\n"
-                log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n"\
+                log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
                     .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
                             res_dic[key]['mean_depth'])
                 log_message = log_message + "\nThe record will be kept in the final results\n"
@@ -310,7 +310,6 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 
 def check_allele(res_dic, dt_base_file):
-
     arm_dic, log_message = load_arm_db(dt_base_file)
 
     perfect_nucl_match = 0
@@ -346,7 +345,7 @@ def check_allele(res_dic, dt_base_file):
                 elif res_seq_prot != '':
                     # for each existing entry in the database
                     for arm_key_2 in arm_dic.keys():
-                        # translate into proteine an entry of the nucl sequence in database
+                        # translate into protein an entry of the nucl sequence in database
                         arm_seq_prot = translate_dna(Seq(arm_dic[arm_key_2]['dna_sequence']))
                         # if the ariba result in prot match perfectly with the prot translation of an existing nucl
                         # sequence in database
@@ -370,12 +369,12 @@ def check_allele(res_dic, dt_base_file):
                 if found:
                     res_dic = add_res(res_dic, res_key, arm_dic, arm_key_1)
 
-    log_message = log_message + "len(res_dic)\n"
+    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
     log_message = log_message + "Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of " \
-                                "total results\n"\
-        .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match/len(res_dic)*100), 2))
+                                "total results\n" \
+        .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match / len(res_dic) * 100), 2))
     log_message = log_message + "Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total" \
-                                " results\n"\
+                                " results\n" \
         .format(os.path.basename(dt_base_file), perfect_prot_match, round((perfect_prot_match / len(res_dic) * 100), 2))
 
     return res_dic, log_message
@@ -470,7 +469,7 @@ def write_csv_result(res_dic, out_dir, dt_basename):
     writer = pd.ExcelWriter(os.path.join(out_dir, 'results_{0}.xlsx'.format(dt_basename)))
     df.to_excel(writer, 'sheet1', index=False)
     writer.save()
-    df.to_csv(os.path.join(out_dir, 'results_{0}.csv'.format(dt_basename)), sep='\t', index=False)
+    df.to_csv(os.path.join(out_dir, 'results_{0}.tsv'.format(dt_basename)), sep='\t', index=False)
 
 
 def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
@@ -588,13 +587,14 @@ def pre_main(args):
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
     db_path = args.databasePath
+    subgroup = args.subGroup
 
     # execution main
-    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path)
+    main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup)
 
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
-    log_message =""
+    log_message = ""
 
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
@@ -603,11 +603,12 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     out_dir = os.path.join(wk_dir, sample_id)
 
     set_dic = read_setting_file(setting_file)
-    sample_dic, sampleList = read_sample_file(sample_file)
+    sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
-    dt_base_file = os.path.join(db_path + "/dbARM/", dt_basename + '.csv')
+    dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
+    dt_basename = '{0}_ariba_{1}_{2}'.format(dt_basename_pre_split[0], dt_basename_pre_split[1], subgroup)
+    dt_base_file = os.path.join(db_path, "dbARM", "{0}_{1}".format(*set_species[dt_base_type], subgroup) + '.tsv')
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')
@@ -641,6 +642,8 @@ def run():
     parser.add_argument('-wd', '--wkDir', dest="wkDir", default='', help="Working directory")
     parser.add_argument('-st', '--settingFile', dest="settingFile", default='/usr/local/readmapper-v0.1/setting.txt',
                         help="Setting file")
+    parser.add_argument('-sg', '--subGroup', dest="subGroup", default='default value in setting.txt',
+                        help="Sub group of gene")
     parser.add_argument('-db', '--databasePath', dest="databasePath", default='',
                         help="Database directory path")
     parser.add_argument('-v', '--verbose', dest="verbose", default="0",

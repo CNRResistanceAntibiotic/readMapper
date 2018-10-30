@@ -1,8 +1,11 @@
-#!/usr/bin/python
+#!/usr/bin/python3
+import csv
 import os
 import glob
 import argparse
 import datetime
+
+from Bio import SeqIO
 
 
 def read_setting_file(inp_file, sep='\t'):
@@ -49,8 +52,6 @@ def mlst_calling(db_dir, sample_id, reads1, reads2, out_dir):
     with open(outfile, 'w') as f:
         f.write('#!/bin/bash\n')
         f.write(cmd)
-    # cmd = 'chmod a+x {0}'.format(outfile)
-    # os.system(cmd)
 
 
 def gene_calling(db_dir, sample_id, reads1, reads2, out_dir):
@@ -62,17 +63,96 @@ def gene_calling(db_dir, sample_id, reads1, reads2, out_dir):
         f.write('#!/bin/bash\n')
         f.write('mkdir -p {0}\n'.format(os.path.dirname(out_dir)))
         f.write(cmd)
-    # cmd = 'chmod a+x {0}'.format(outfile)
 
-    # os.system(cmd)
+
+def get_all_subsets(all_tsv_file):
+    db_subset_list = []
+
+    with open(all_tsv_file, 'r', encoding="utf8") as f:
+
+        reader = csv.DictReader(f, delimiter='\t')
+
+        for row in reader:
+
+            subset_list = row['db_names'].split('|')
+
+            for subset in subset_list:
+
+                if subset not in db_subset_list:
+                    db_subset_list .append(subset)
+
+    return db_subset_list
+
+
+"""
+for subset in db_subset_list:
+
+
+    arm_subset_seq_path = os.path.join(db_dir, "dbARM",
+                                       "{0}_{1}.fa".format(db_name_ariba, subset))
+    arm_subset_tsv_path = os.path.join(db_dir, "dbARM",
+                                       "{0}_{1}.tsv".format(db_name_ariba, subset))
+
+    args_f = args_f + "-f {0} ".format(arm_subset_seq_path)
+    args_m = args_m + "-m {0} ".format(arm_subset_tsv_path)
+"""
+
+
+def get_prepareref_seq_ariba(db_subset_list, db_arm_path, db_name, subsets_name):
+    db_name_split = db_name.split("_")
+    db_name = db_name_split[0]+"_ariba_"+db_name_split[1]
+
+    seq_filename = os.path.join(db_arm_path, "{0}_{1}.fa".format(db_name, subsets_name))
+
+    if not os.path.exists(seq_filename):
+
+        records_hash = {}
+
+        for subset in db_subset_list:
+
+            subset_seq_file = os.path.join(db_arm_path, "{0}_{1}.fa".format(db_name, subset))
+            for seq_record in SeqIO.parse(subset_seq_file, "fasta"):
+                records_hash[seq_record.id] = seq_record
+        # write output fasta
+        with open(seq_filename, 'w') as handle:
+            SeqIO.write(records_hash.values(), handle, 'fasta')
+
+    return seq_filename
+
+
+def get_prepareref_tsv_ariba(db_subset_list, db_arm_path, db_name, subsets_name):
+    db_name_split = db_name.split("_")
+    db_name = db_name_split[0]+"_ariba_"+db_name_split[1]
+
+    tsv_filename = os.path.join(db_arm_path, "{0}_{1}.tsv".format(db_name, subsets_name))
+
+    if not os.path.exists(tsv_filename):
+        tsv_hash = {}
+
+        for subset in db_subset_list:
+
+            subset_tsv_file = os.path.join(db_arm_path, "{0}_{1}.tsv".format(db_name, subset))
+            with open(subset_tsv_file) as tsv:
+                reader = csv.reader(tsv, delimiter='\t')
+                for row in reader:
+                    id_prin = row[0]+'-'+row[3]
+                    tsv_hash[id_prin] = row
+
+        # write output tsv
+        with open(tsv_filename, 'w') as tsv:
+            writer = csv.writer(tsv, delimiter='\t')
+            for key, row in tsv_hash.items():
+                writer.writerow(row)
+
+    return tsv_filename
 
 
 def pre_main(args):
-
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     reads_dir = args.readsDir
     samplefile = args.sampleFile
+    subset_list = args.subset.split(',')
     if args.force == "True":
         print("\nForce the preparation : \n", flush=True)
         force = args.force
@@ -82,11 +162,10 @@ def pre_main(args):
     # nucmer_min_id = args.nucmer_min_id
 
     # execute main
-    main(setting_file, wk_dir, reads_dir, samplefile, force, initial)
+    main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_list)
 
 
-def main(setting_file, wk_dir, reads_dir, samplefile, force, initial):
-
+def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_list):
     db_dir = os.path.abspath(os.path.join(setting_file, os.pardir))
 
     if samplefile == '':
@@ -124,8 +203,8 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial):
                     for key, value in mlst_db_hash.items():
 
                         # if multiple instruction like 2 or more schemas MLST
-                        for element in value:
-                            mlst_db_path = db_dir + "/dbMLST/{0}_{1}".format(key, element)
+                        for subset in value:
+                            mlst_db_path = os.path.join(db_dir, "dbMLST", "{0}_{1}".format(key, subset))
 
                             if not os.path.isdir(mlst_db_path):
                                 print('Database directory {0} not found'.format(mlst_db_path), flush=True)
@@ -141,34 +220,84 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial):
 
                     print('Prepare antibiotic resistance gene detection for {0}'.format(sample_id), flush=True)
 
-                    for db_name, db_subset in set_dic[species][work].items():
+                    for db_name, db_subset_list in set_dic[species][work].items():
 
-                        # if multiple instruction like 2 or more schemas MLST
-                        for element in db_subset:
+                        subsets_name = ""
+                        # get user selected subsets
+                        if subset_list:
+                            db_subset_list = subset_list
 
-                            arm_db_path = db_dir + "/dbARM/{0}_{1}".format(db_name, element)
+                        for subset in db_subset_list:
+                            if subset == 'all':
+                                subsets_name = 'all'
+                                db_subset_list = get_all_subsets(os.path.join(db_dir, 'dbARM', db_name + "_all.tsv"))
+                                break
+                            if not subsets_name:
+                                subsets_name = subset
+                                continue
+                            subsets_name = subsets_name + "-" + subset
 
-                            if not os.path.isdir(arm_db_path):
-                                print('Database directory {0} not found'.format(arm_db_path), flush=True)
-                            else:
-                                with open(db_dir + '/info/arm_trace.log', 'a') as f:
-                                    f.write('{0}\t{1}\t{2}\t{3}\n'
-                                            .format(datetime.date.today(), sample_id, arm_db_path, initial))
+                        db_name_split = db_name.split("_")
+                        db_name_ariba = "{0}_ariba_{1}".format(db_name_split[0], db_name_split[1])
 
-                                # run the ARM calling
-                                gene_calling(arm_db_path, sample_id, reads1, reads2, wk_dir)
+                        arm_db_ariba_path = os.path.join(db_dir, "dbARM", "{0}_{1}".format(db_name_ariba, subsets_name))
+
+                        arm_subset_tsv_global_path = os.path.join(db_dir, "dbARM", "{0}_{1}.tsv"
+                                                                  .format(db_name, subsets_name))
+
+                        if not os.path.exists(arm_subset_tsv_global_path):
+
+                            with open(arm_subset_tsv_global_path, 'w') as out:
+
+                                writer = ""
+                                pivot = 1
+
+                                for subset in db_subset_list:
+                                    arm_subset_tsv_path = os.path.join(db_dir, "dbARM",
+                                                                       "{0}_{1}.tsv".format(db_name, subset))
+
+                                    with open(arm_subset_tsv_path, 'r') as input_tsv:
+                                        reader = csv.DictReader(input_tsv, delimiter='\t')
+                                        if pivot:
+                                            writer = csv.DictWriter(out, fieldnames=reader.fieldnames, delimiter='\t')
+                                            writer.writeheader()
+                                            pivot = 0
+
+                                        for row in reader:
+                                            writer.writerow(row)
+
+                        elif not os.path.isdir(arm_db_ariba_path):
+                            print('Database directory {0} not found'.format(arm_db_ariba_path), flush=True)
+                            print('The ariba database construction started...', flush=True)
+
+                            db_arm_path = os.path.abspath(os.path.join(db_dir, "dbARM"))
+                            args_f = get_prepareref_seq_ariba(db_subset_list, db_arm_path, db_name, subsets_name)
+                            args_m = get_prepareref_tsv_ariba(db_subset_list, db_arm_path, db_name, subsets_name)
+
+                            cmd = 'ariba prepareref -f {0} -m {1} {2}'.format(args_f, args_m, arm_db_ariba_path)
+                            print(cmd)
+                            os.system(cmd)
+
+                            print('The ariba database construction finished.', flush=True)
+
+                        with open(os.path.join(db_dir, 'info', 'arm_trace.log'), 'a') as f:
+                            f.write('{0}\t{1}\t{2}\t{3}\n'
+                                    .format(datetime.date.today(), sample_id, arm_db_ariba_path, initial))
+
+                        # run the ARM calling
+                        gene_calling(arm_db_ariba_path, sample_id, reads1, reads2, wk_dir)
 
             elif work == 'rep':
                 if 'rep' in set_dic[species]:
 
                     print('Prepare replicon detection for {0} '.format(sample_id), flush=True)
 
-                    for db_name, db_subset in set_dic[species][work].items():
+                    for db_name_ariba, db_subset_list in set_dic[species][work].items():
 
                         # if multiple instruction like 2 or more schemas MLST
-                        for element in db_subset:
+                        for subset in db_subset_list:
 
-                            rep_db_path = db_dir + "/dbREP/{0}_{1}".format(db_name, element)
+                            rep_db_path = db_dir + "/dbREP/{0}_{1}".format(db_name_ariba, subset)
 
                             if not os.path.isdir(rep_db_path):
                                 print('Database directory {0} not found'.format(rep_db_path), flush=True)
@@ -185,12 +314,12 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial):
 
                     print('Prepare virulence detection for {0}'.format(sample_id), flush=True)
 
-                    for db_name, db_subset in set_dic[species][work].items():
+                    for db_name_ariba, db_subset_list in set_dic[species][work].items():
 
                         # if multiple instruction like 2 or more schemas MLST
-                        for element in db_subset:
+                        for subset in db_subset_list:
 
-                            vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name, element)
+                            vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name_ariba, subset)
 
                             if not os.path.isdir(vir_db_path):
                                 print('Database directory {0} not found'.format(vir_db_path), flush=True)
@@ -221,6 +350,8 @@ def run():
     parser.add_argument('-F', '--force', dest="force", default=False, action='store_true',
                         help="Overwrite output directory, if it already exists [False]")
     parser.add_argument('-in', '--initial', dest="initial", default="RBO", help="Initial of user")
+    parser.add_argument('-sb', '--subset', dest="subset", default='GN',
+                        help="Comma separated value of database subset for ARM Database like (GN,Eff)")
     parser.add_argument('-V', '--version', action='version', version='prepare_mapping-' + version(),
                         help="Prints version number")
     args = parser.parse_args()

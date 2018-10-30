@@ -2,13 +2,15 @@
 # Aurélien Birer
 # 05/2018
 
-from readmapper import prepare_mapping, write_merged_xlsx, manager
+
 import argparse
 import os
-import subprocess
+
+from readmapper_src import prepare_mapping, manager, write_merged_xlsx
 
 
 def main(args):
+    subset_list = []
     print("Version ReadMapper: ", version())
     sample_file = os.path.abspath(args.sampleFile)
     reads = os.path.abspath(args.reads)
@@ -16,6 +18,8 @@ def main(args):
     database = os.path.abspath(args.database)
     initial = args.initial
     force = args.force
+    if args.subset:
+        subset_list = args.subset.split(',')
 
     if not sample_file:
         print("Sample file is missing !\n", flush=True)
@@ -55,6 +59,7 @@ def main(args):
     print("DataBase directory: {0}".format(database), flush=True)
     print("Setting File: {0}".format(set_file), flush=True)
     print("Initial user: {0}".format(initial), flush=True)
+    print("Subset selected: {0}".format(subset_list), flush=True)
     print("Force: {0}".format(force), flush=True)
     print("Application run at : {0}\n".format(dir_path), flush=True)
 
@@ -65,12 +70,7 @@ def main(args):
     print("\nRun the preparation : \n", flush=True)
 
     try:
-        prepare_mapping.main(set_file, wk_dir, reads, sample_file, force, initial)
-        """
-        cmd = "python3 {0} -sf {1} -rd {2} -wd {3} -in {4} -set {5}".format(prepare_mapping.__file__, sample_file,
-                                                                            reads, wk_dir, initial, set_file)
-        subprocess.call(cmd, shell=True)
-        """
+        prepare_mapping.main(set_file, wk_dir, reads, sample_file, force, initial, subset_list)
     except Exception as e:
         print(e, flush=True)
 
@@ -84,23 +84,9 @@ def main(args):
 
     print("\nRun the manager : \n", flush=True)
 
-    """
-    print(" {0} \n\t -sf {1} \n\t -db {2} \n\t -wd {3} \n\t -in {4} \n\t -set {5} \n".format(manager.__file__,
-                                                                                             sample_file, database,
-                                                                                             wk_dir,
-                                                                                             initial, set_file), flush=True)
-                                                                                             
-    """
-
     try:
         manager.main(set_file, wk_dir, sample_file, initial, database)
 
-        """
-        cmd = "python3 {0} -sf {1} -db {2} -wd {3} -in {4} -set {5}".format(manager.__file__, sample_file, database,
-                                                                            wk_dir,
-                                                                            initial, set_file)
-        subprocess.call(cmd, shell=True)
-        """
     except Exception as e:
         print(e, flush=True)
 
@@ -114,10 +100,7 @@ def main(args):
 
     try:
         write_merged_xlsx.main(wk_dir, initial, sample_file)
-        """
-        cmd = "python3 {0} -sf {1} -wd {2} -in {3}".format(write_merged_xlsx.__file__, sample_file, wk_dir, initial)
-        subprocess.call(cmd, shell=True)
-        """
+
     except Exception as e:
         print(e, flush=True)
 
@@ -134,7 +117,7 @@ def run():
     global usage
 
     usage = "readmapper [-sf sample file] [-rd reads directory] [-wd work directory] [-dd databases directory] [-i " \
-            "initial of the user] <-F Overwrite output directory (Default=False)> "
+            "initial of the user] [-sb subset to use] <-F Overwrite output directory (Default=False)> "
 
     parser = argparse.ArgumentParser(
         prog='readmapper',
@@ -148,6 +131,8 @@ def run():
                         help="Working directory")
     parser.add_argument('-dd', '--databaseDir', dest="database", default='',
                         help="Setting file")
+    parser.add_argument('-sb', '--subset', dest="subset", default='',
+                        help="Comma separated value of database subset for ARM Database like (GN,Eff)")
     parser.add_argument('-i', '--initial', dest="initial", default='',
                         help="Initial of user")
     parser.add_argument('-f', '--force', dest="force", default='False',
