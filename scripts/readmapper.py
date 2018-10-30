@@ -11,7 +11,10 @@ from readmapper_src import prepare_mapping, manager, write_merged_xlsx
 
 def main(args):
     subset_list = []
+
     print("Version ReadMapper: ", version())
+
+
     sample_file = os.path.abspath(args.sampleFile)
     reads = os.path.abspath(args.reads)
     wk_dir = os.path.abspath(args.workDir)
@@ -49,8 +52,6 @@ def main(args):
     dir_path = os.path.dirname(os.path.realpath(__file__))
 
     set_file = os.path.join(database, "setting.txt")
-
-    #
 
     # print folders/files path
     print("\nSample file: {0}".format(sample_file), flush=True)

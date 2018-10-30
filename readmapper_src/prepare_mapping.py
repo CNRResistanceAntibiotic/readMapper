@@ -84,20 +84,6 @@ def get_all_subsets(all_tsv_file):
     return db_subset_list
 
 
-"""
-for subset in db_subset_list:
-
-
-    arm_subset_seq_path = os.path.join(db_dir, "dbARM",
-                                       "{0}_{1}.fa".format(db_name_ariba, subset))
-    arm_subset_tsv_path = os.path.join(db_dir, "dbARM",
-                                       "{0}_{1}.tsv".format(db_name_ariba, subset))
-
-    args_f = args_f + "-f {0} ".format(arm_subset_seq_path)
-    args_m = args_m + "-m {0} ".format(arm_subset_tsv_path)
-"""
-
-
 def get_prepareref_seq_ariba(db_subset_list, db_arm_path, db_name, subsets_name):
     db_name_split = db_name.split("_")
     db_name = db_name_split[0]+"_ariba_"+db_name_split[1]
@@ -218,6 +204,9 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
             elif work == 'arm':
                 if 'arm' in set_dic[species]:
 
+
+
+
                     print('Prepare antibiotic resistance gene detection for {0}'.format(sample_id), flush=True)
 
                     for db_name, db_subset_list in set_dic[species][work].items():
@@ -237,8 +226,12 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                                 continue
                             subsets_name = subsets_name + "-" + subset
 
+                        print("\nList ARM-DB Subset: {0}\n".format(subsets_name))
+
                         db_name_split = db_name.split("_")
                         db_name_ariba = "{0}_ariba_{1}".format(db_name_split[0], db_name_split[1])
+
+                        print("\nVersion ARM-DB: {0}\n".format(db_name_split[1]))
 
                         arm_db_ariba_path = os.path.join(db_dir, "dbARM", "ariba", "{0}_{1}"
                                                          .format(db_name_ariba, subsets_name))
@@ -293,12 +286,16 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
 
                     print('Prepare replicon detection for {0} '.format(sample_id), flush=True)
 
-                    for db_name_ariba, db_subset_list in set_dic[species][work].items():
+                    for db_name, db_subset_list in set_dic[species][work].items():
 
                         # if multiple instruction like 2 or more schemas MLST
                         for subset in db_subset_list:
 
-                            rep_db_path = db_dir + "/dbREP/{0}_{1}".format(db_name_ariba, subset)
+                            rep_db_path = db_dir + "/dbREP/{0}_{1}".format(db_name, subset)
+
+                            db_name_split = db_name.split("_")
+
+                            print("\nVersion REP: {0}\n".format(db_name_split[1]))
 
                             if not os.path.isdir(rep_db_path):
                                 print('Database directory {0} not found'.format(rep_db_path), flush=True)
@@ -315,12 +312,16 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
 
                     print('Prepare virulence detection for {0}'.format(sample_id), flush=True)
 
-                    for db_name_ariba, db_subset_list in set_dic[species][work].items():
+                    for db_name, db_subset_list in set_dic[species][work].items():
 
                         # if multiple instruction like 2 or more schemas MLST
                         for subset in db_subset_list:
 
-                            vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name_ariba, subset)
+                            vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name, subset)
+
+                            db_name_split = db_name.split("_")
+
+                            print("\nVersion VIR: {0}\n".format(db_name_split[1]))
 
                             if not os.path.isdir(vir_db_path):
                                 print('Database directory {0} not found'.format(vir_db_path), flush=True)
