@@ -75,10 +75,10 @@ def read_species(samplefile, sample_id, sep='\t'):
         exit(1)
 
 
-def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initial):
+def write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initial):
     atbs = list(amr_dic.keys())
     atbs.sort()
-    fres_dict = {}
+    f_res_dict = {}
     for atb in atbs:
         results = list(amr_dic[atb].keys())
         results.sort()
@@ -124,10 +124,10 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
                     res = res + '*'
 
             if res.strip() != '':
-                if atb in fres_dict:
-                    fres_dict[atb].append(res)
+                if atb in f_res_dict:
+                    f_res_dict[atb].append(res)
                 else:
-                    fres_dict[atb] = [res]
+                    f_res_dict[atb] = [res]
 
     document = Document()
     sections = document.sections
@@ -146,7 +146,7 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
     met_p1.add_run('   ~ Analyse ')
     met_p1.add_run('in silico ').italic = True
     met_p1.add_run('des séquences génomiques : Bowtie2, CD-HIT, MUMmer et Samtools\n\n')
-    if st_list:
+    if st_hash:
         met_p1.add_run('   ~ Bases de données MLST : ')
         if species == 'escherichia coli':
             met_p1.add_run('http://mlst.warwick.ac.uk/mlst\n\n')
@@ -158,10 +158,10 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
     met_p1.add_run('   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
                    .format(arm_db_name.split('_')[0], arm_db_name.split('_')[1], arm_db_name.split('_')[2]))
 
-    if st_list:
+    if st_hash:
         document.add_heading('Résultat : Génotypage MLST ', 3)
-        for st in st_list:
-            document.add_paragraph('   ~ Sequence Type: ST-{0}\n'.format(st))
+        for schema, st in st_hash.items():
+            document.add_paragraph('   ~ Sequence Type: ST-{0}. For schema: {1}\n'.format(st, schema))
 
     document.add_heading(
         'Résultat : Déterminants de la résistance aux 3 principales familles d\'antibiotiques (*)', 3)
@@ -177,7 +177,7 @@ def write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initia
     for func in f_results:
         res_txt = ''
         try:
-            res = fres_dict[func]
+            res = f_res_dict[func]
             res.sort()
             res_txt = res_txt + '   ~ {0} : {1}\n'.format(fr_dict[func], ', '.join(res))
             # document.add_paragraph(res_txt)
@@ -212,15 +212,22 @@ def main(wk_dir, initial, sample_id):
     try:
         st_filename_list = glob.glob(os.path.join(wk_dir, 'mlst_report_*.tsv'))
         st_dic = read_mlst_results_tsv_file(st_filename_list)
-        st_list = []
+        st_hash = {}
         for key, value in st_dic.items():
-            st_list.append(value['ST'])
+            count_gene = 1
+            for col in value:
+                if "gene" in col:
+                    count_gene = count_gene +1
+            schema = key
+            for count in range(1, count_gene):
+                schema = schema + "-" + value["gene{0}".format(count)]
+            st_hash[schema] = value["ST"]
     except IndexError:
         st_list = ''
     arm_filename = glob.glob(os.path.join(wk_dir, 'summary_results_armDB_*.csv'))[0]
     arm_db_name = os.path.splitext(os.path.basename(arm_filename).replace('summary_results_', ''))[0]
     amr_dic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
-    write_docx(wk_dir, sample_id, species, st_list, amr_dic, arm_db_name, initial)
+    write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initial)
 
 
 def version():

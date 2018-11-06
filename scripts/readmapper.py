@@ -14,7 +14,6 @@ def main(args):
 
     print("Version ReadMapper: ", version())
 
-
     sample_file = os.path.abspath(args.sampleFile)
     reads = os.path.abspath(args.reads)
     wk_dir = os.path.abspath(args.workDir)
