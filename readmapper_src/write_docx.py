@@ -145,18 +145,11 @@ def write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initia
     met_p1.add_run('Méthode Illumina (2 x 150pb ou 300pb appariés)\n\n')
     met_p1.add_run('   ~ Analyse ')
     met_p1.add_run('in silico ').italic = True
-    met_p1.add_run('des séquences génomiques : Bowtie2, CD-HIT, MUMmer et Samtools\n\n')
-    if st_hash:
-        met_p1.add_run('   ~ Bases de données MLST : ')
-        if species == 'escherichia coli':
-            met_p1.add_run('http://mlst.warwick.ac.uk/mlst\n\n')
-        elif species == 'klebsiella pneumoniae':
-            met_p1.add_run('http://bigsdb.pasteur.fr\n\n')
-        else:
-            met_p1.add_run('https://pubmlst.org/databases\n\n')
+    met_p1.add_run('des séquences génomiques : Ariba, Bowtie2, CD-HIT, MUMmer et Samtools\n\n')
 
+    arm_db_name_split = arm_db_name.split('_')
     met_p1.add_run('   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
-                   .format(arm_db_name.split('_')[0], arm_db_name.split('_')[1], arm_db_name.split('_')[2]))
+                   .format(arm_db_name_split[0], arm_db_name_split[2], arm_db_name_split[3]))
 
     if st_hash:
         document.add_heading('Résultat : Génotypage MLST ', 3)
