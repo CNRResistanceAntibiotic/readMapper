@@ -11,13 +11,17 @@ import pandas as pd
 
 
 def load_arm_res(tsv_file, gen_file, seq_file):
+
+
     log_message = ""
+
+    log_message = log_message + "{0}\n{1}\n{2}\n".format(tsv_file, gen_file, seq_file)
 
     if os.path.exists(gen_file):
         gen_file = gunzip_file(gen_file)
     else:
         gen_file = os.path.splitext(gen_file)[0]
-    genDic = read_fasta_file(gen_file)
+    gen_dic = read_fasta_file(gen_file)
 
     if os.path.exists(seq_file):
         seq_file = gunzip_file(seq_file)
@@ -39,10 +43,10 @@ def load_arm_res(tsv_file, gen_file, seq_file):
                 # gene = dtDic['gene']  # 1 gene 0 non-coding
 
                 found = '0'
-                for key in genDic.keys():
+                for key in gen_dic.keys():
                     if dt_dic['ctg'] in key:
                         found = '1'
-                        dna_rec = genDic[key]
+                        dna_rec = gen_dic[key]
                         prot_rec = str(translate_dna(dna_rec.seq))
                         break
                 if found == '0':

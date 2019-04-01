@@ -204,9 +204,6 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
             elif work == 'arm':
                 if 'arm' in set_dic[species]:
 
-
-
-
                     print('Prepare antibiotic resistance gene detection for {0}'.format(sample_id), flush=True)
 
                     for db_name, db_subset_list in set_dic[species][work].items():
@@ -219,7 +216,7 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                         for subset in db_subset_list:
                             if subset == 'all':
                                 subsets_name = 'all'
-                                db_subset_list = get_all_subsets(os.path.join(db_dir, 'dbARM', db_name + "_all.tsv"))
+                                db_subset_list = get_all_subsets(os.path.join(db_dir, 'dbARM', 'subsets', db_name + "_all.tsv"))
                                 break
                             if not subsets_name:
                                 subsets_name = subset
@@ -236,10 +233,12 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                         arm_db_ariba_path = os.path.join(db_dir, "dbARM", "ariba", "{0}_{1}"
                                                          .format(db_name_ariba, subsets_name))
 
-                        arm_subset_tsv_global_path = os.path.join(db_dir, "dbARM", "{0}_{1}.tsv"
+                        arm_subset_tsv_global_path = os.path.join(db_dir, "dbARM", 'subsets', "{0}_{1}.tsv"
                                                                   .format(db_name, subsets_name))
 
                         if not os.path.exists(arm_subset_tsv_global_path):
+
+                            print("Create subset file in Database: {0}".format(arm_subset_tsv_global_path))
 
                             with open(arm_subset_tsv_global_path, 'w') as out:
 
@@ -247,7 +246,7 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                                 pivot = 1
 
                                 for subset in db_subset_list:
-                                    arm_subset_tsv_path = os.path.join(db_dir, "dbARM",
+                                    arm_subset_tsv_path = os.path.join(db_dir, "dbARM", 'subsets',
                                                                        "{0}_{1}.tsv".format(db_name, subset))
 
                                     with open(arm_subset_tsv_path, 'r') as input_tsv:
