@@ -391,9 +391,8 @@ def add_res(res_dic, res_key, arm_dic, arm_key):
     res_dic[res_key]['alternative_designation'] = arm_dic[arm_key]['alternative_names']
     res_dic[res_key]['searched_dna_changes'] = arm_dic[arm_key]['dna_snp']
     res_dic[res_key]['searched_prot_changes'] = arm_dic[arm_key]['prot_snp']
-    res_dic[res_key]['ATB_groups'] = arm_dic[arm_key]['function_grp_names']
+    res_dic[res_key]['ATB_groups'] = arm_dic[arm_key]['antibiotic_family']
     res_dic[res_key]['mechanism_groups'] = arm_dic[arm_key]['mechanism_names']
-    res_dic[res_key]['related_groups'] = arm_dic[arm_key]['cluster90_grp_name']
     return res_dic
 
 
@@ -404,9 +403,8 @@ def update_res(res_dic, res_key, arm_dic, arm_key):
     res_dic[res_key]['alternative_designation'] = arm_dic[arm_key]['alternative_names']
     res_dic[res_key]['searched_dna_changes'] = arm_dic[arm_key]['dna_snp']
     res_dic[res_key]['searched_prot_changes'] = arm_dic[arm_key]['prot_snp']
-    res_dic[res_key]['ATB_groups'] = arm_dic[arm_key]['function_grp_names']
+    res_dic[res_key]['ATB_groups'] = arm_dic[arm_key]['antibiotic_family']
     res_dic[res_key]['mechanism_groups'] = arm_dic[arm_key]['mechanism_names']
-    res_dic[res_key]['related_groups'] = arm_dic[arm_key]['cluster90_grp_name']
     res_dic[res_key]['pc_identity'] = '100.00'
     res_dic[res_key]['pc_coverage'] = '100.00'
     res_dic[res_key]['pc_coverage'] = '100.00'
@@ -439,10 +437,8 @@ def write_csv_result(res_dic, out_dir, dt_basename):
 
     arrays_items = ['keyDB', 'designation', 'pc_identity', 'pc_coverage', 'mean_depth', 'variant_seq_type',
                     'known_change', 'unknown_change',
-                    # 'summary_substitution_depth',
                     'nucleotide_change', 'detected_nucleotide', 'depth_by_detected_nucleotide',
-                    # 'total_depth_by_nucleotide',
-                    'ATB_groups', 'mechanism_groups', 'related_groups',
+                    'ATB_groups', 'mechanism_groups',
                     'alternative_designation', 'searched_prot_changes', 'searched_dna_changes', 'comment',
                     'dna_sequence', 'prot_sequence']
     res_list = []
@@ -607,12 +603,15 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     out_dir = os.path.join(wk_dir, sample_id)
 
     set_dic = read_setting_file(setting_file)
+
     sample_dic, sample_list = read_sample_file(sample_file)
+
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
+
     dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
     dt_basename = '{0}_ariba_{1}_{2}'.format(dt_basename_pre_split[0], dt_basename_pre_split[1], subgroup)
-    dt_base_file = os.path.join(db_path, "dbARM", "{0}_{1}".format(*set_species[dt_base_type], subgroup) + '.tsv')
+    dt_base_file = os.path.join(db_path, "dbARM", "subsets", "{0}_{1}".format(*set_species[dt_base_type], subgroup) + '.tsv')
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')

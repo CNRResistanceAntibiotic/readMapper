@@ -17,8 +17,8 @@ def read_setting_file(inp_file, sep='\t'):
             if line != '':
                 key, data = line.split(sep)
                 set_dic[key] = {}
-                dataList = data.split(',')
-                for data in dataList:
+                data_list = data.split(',')
+                for data in data_list:
                     key2, data2 = data.split(':')
                     data2_list = data2.split('|')
                     work = data2_list[0]
