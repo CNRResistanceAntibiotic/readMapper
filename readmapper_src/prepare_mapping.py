@@ -137,7 +137,7 @@ def pre_main(args):
     setting_file = args.setFile
     wk_dir = os.path.abspath(args.workDir)
     reads_dir = args.readsDir
-    samplefile = args.sampleFile
+    sample_file = args.sampleFile
     subset_list = args.subset.split(',')
     if args.force == "True":
         print("\nForce the preparation : \n", flush=True)
@@ -148,18 +148,18 @@ def pre_main(args):
     # nucmer_min_id = args.nucmer_min_id
 
     # execute main
-    main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_list)
+    main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_list)
 
 
-def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_list):
+def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_list):
     db_dir = os.path.abspath(os.path.join(setting_file, os.pardir))
 
-    if samplefile == '':
-        samplefile = os.path.join(wk_dir, 'sample.csv')
+    if sample_file == '':
+        sample_file = os.path.join(wk_dir, 'sample.csv')
 
     set_dic = read_setting_file(setting_file)
 
-    sample_dic, sample_list = read_sample_file(samplefile)
+    sample_dic, sample_list = read_sample_file(sample_file)
 
     for sample_id in sample_list:
 
@@ -314,9 +314,31 @@ def main(setting_file, wk_dir, reads_dir, samplefile, force, initial, subset_lis
                     for db_name, db_subset_list in set_dic[species][work].items():
 
                         # if multiple instruction like 2 or more schemas MLST
-                        for subset in db_subset_list:
+                        for db_name, db_subset_list in set_dic[species][work].items():
 
-                            vir_db_path = db_dir + "/dbVIR/{0}_{1}".format(db_name, subset)
+                            subsets_name = ""
+                            # get user selected subsets
+                            if subset_list:
+                                db_subset_list = subset_list
+
+                            for subset in db_subset_list:
+                                if subset == 'all':
+                                    subsets_name = 'all'
+                                    db_subset_list = get_all_subsets(
+                                        os.path.join(db_dir, 'dbVIR', 'subsets', db_name + "_all.tsv"))
+                                    break
+                                if not subsets_name:
+                                    subsets_name = subset
+                                    continue
+                                subsets_name = subsets_name + "-" + subset
+
+                            print("\nList VIR-DB Subset: {0}\n".format(subsets_name))
+
+                            db_name_split = db_name.split("_")
+                            db_name_ariba = "{0}_ariba_{1}".format(db_name_split[0], db_name_split[1])
+
+                            vir_db_path = os.path.join(db_dir, "dbVIR", "ariba", "{0}_{1}"
+                                                             .format(db_name_ariba, subsets_name))
 
                             db_name_split = db_name.split("_")
 
@@ -345,7 +367,6 @@ def run():
                         help='fasta file of database to use')
     parser.add_argument('-wd', '--wkDir', dest="workDir", default='/home/bacteriologie/ariba/test',
                         help='tsv file of database to use')
-    # parser.add_argument('-nmi', '--nucmer_min_id', dest="nucmer_min_id", default='90', help="nucmer_min_id [90]")
     parser.add_argument('-set', '--setFile', dest="setFile", default='/usr/local/readmapper-v0.1/setting.txt',
                         help="setting file [setting.txt]")
     parser.add_argument('-F', '--force', dest="force", default=False, action='store_true',
