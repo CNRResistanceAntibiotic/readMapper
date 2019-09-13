@@ -6,7 +6,7 @@ from Bio import SeqIO
 from Bio.Seq import Seq
 from Bio.SeqRecord import SeqRecord
 from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
-from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_arm_db
+from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_vir_arm_db
 import pandas as pd
 
 
@@ -314,7 +314,7 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 
 def check_allele(res_dic, dt_base_file):
-    arm_dic, log_message = load_arm_db(dt_base_file)
+    arm_dic, log_message = load_vir_arm_db(dt_base_file)
 
     perfect_nucl_match = 0
     perfect_prot_match = 0

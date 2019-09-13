@@ -1,73 +1,20 @@
 #!/usr/bin/python3
 import os
+import re
 import argparse
+from Bio import SeqIO
+from Bio.Seq import Seq
+from Bio.SeqRecord import SeqRecord
 from readmapper_src.prepare_mapping import read_sample_file, read_setting_file
-from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, filter_results, translate_dna
-from collections import OrderedDict
+from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fasta_file, translate_dna, load_vir_arm_db
 import pandas as pd
-import copy
-
-
-def load_vir_db(inp_file):
-
-    log_message = ""
-    log_message = log_message + "database used: {0}\n".format(inp_file)
-    gene_vir_dic = {}
-    vf_vir_dic = {}
-    with open(inp_file, 'r') as f:
-        header = ""
-        for n, line in enumerate(f):
-            line = line.strip()
-            if n == 0:
-                header = line.strip().split('\t')
-            elif line != '' and n > 0:
-                line = line.split('\t')[:-1]
-                data = dict(zip(header, line))
-
-                vf = data['VF_Accession']
-                strain = '{0}__{1}__{2}'.format(data['genus'], data['species'], data['strain'].replace(' ', '_'))
-
-                gene_vir_dic[data['gene_id']] = data
-                try:
-                    vf_vir_dic[vf][strain].append(data['gene_id'])
-                except KeyError:
-                    if vf not in vf_vir_dic.keys():
-                        vf_vir_dic[vf] = {strain: [data['gene_id']]}
-                    else:
-                        vf_vir_dic[vf][strain] = [data['gene_id']]
-
-    log_message = log_message + "\nLoading of {0} done!\n".format(inp_file)
-    log_message = log_message + "Number of virulence genes: {0}\n".format(len(gene_vir_dic.keys()))
-    log_message = log_message + "Number of virulence factors: {0}\n".format(len(vf_vir_dic))
-    return gene_vir_dic, vf_vir_dic, log_message
-
-
-def load_clu_db(cluster_file):
-    clu_dic = {}
-    with open(cluster_file) as f:
-        for line in f:
-            line = line.strip().split('\t')
-
-            key = line[0].split('::')[0]
-            gene_id = line[1].split('::')[0]
-
-            if len(line) > 2:
-                if key not in clu_dic.keys():
-                    clu_dic[key] = {gene_id: []}
-                if gene_id not in clu_dic[key].keys():
-                    clu_dic[key][gene_id] = []
-
-                homologs = line[2].split(',')
-                for homolog in homologs:
-                    gene_id2 = homolog.split('::')[0]
-                    clu_dic[key][gene_id].append(gene_id2)
-
-    return clu_dic
 
 
 def load_vir_res(tsv_file, gen_file, seq_file):
 
     log_message = ""
+
+    log_message = log_message + "{0}\n{1}\n{2}\n".format(tsv_file, gen_file, seq_file)
 
     if os.path.exists(gen_file):
         gen_file = gunzip_file(gen_file)
@@ -83,9 +30,9 @@ def load_vir_res(tsv_file, gen_file, seq_file):
 
     res_dic = {}
     with open(tsv_file) as f:
-        dna_rec = ""
-        prot_rec = ""
         header = ""
+        prot_rec = ""
+        dna_rec = ""
         for n, line in enumerate(f):
             if n == 0:
                 header = line.strip().split('\t')
@@ -108,365 +55,527 @@ def load_vir_res(tsv_file, gen_file, seq_file):
                             dna_rec = seq_dic[key]
                             prot_rec = '.'
                             break
-
                 if found == '0':
-                    log_message = log_message + "\nSequence not found:{0}\n".format(dt_dic['ctg'])
+                    log_message = log_message + "Not found:{0}\n".format(dt_dic['ctg'])
                     log_message = log_message + "{0}\n".format(dt_dic)
-                    exit(1)
 
                 ref_len = float(dt_dic['ref_len'])
                 ref_base_assembled = int(dt_dic['ref_base_assembled'])
                 cov = (ref_base_assembled / ref_len) * 100
                 dt_dic['pc_coverage'] = '{0}'.format(round(cov, 2))
 
-                update = '1'
-                if ref_name in res_dic.keys():
-                    if cov > float(res_dic[ref_name]['pc_coverage']):
-                        update = '1'
-                    else:
-                        update = '0'
+                ref_nt = dt_dic['ref_nt']
+                ctg_nt = dt_dic['ctg_nt']
+                nucleotide_change = '{0}->{1}'.format(ref_nt, ctg_nt)
+                if nucleotide_change == '.->.':
+                    nucleotide_change = '.'
+                smtls_nts = dt_dic['smtls_nts']
+                smtls_nts_depth = dt_dic['smtls_nts_depth']
+                smtls_total_depth = dt_dic['smtls_total_depth']
 
-                if update == '1':
-                    key = ref_name.split('__')[0]
-                    res_dic[key] = {'pc_identity': dt_dic['pc_ident'], 'pc_coverage': dt_dic['pc_coverage'],
-                                    'gene': dt_dic['gene'], 'flag': dt_dic['flag'], 'ctg_name': dt_dic['ctg'],
-                                    # 'ctg_len':dtDic['ctg_len'],
-                                    'ref_name': dt_dic['ref_name'],
-                                    'mean_depth': dt_dic['ctg_cov'], 'dna_sequence': dna_rec, 'prot_sequence': prot_rec}
+                sub_depth = parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
+
+                if dt_dic['ref_ctg_effect'] != '.':
+                    if dt_dic['known_var_change'] == dt_dic['ref_ctg_change']:
+                        known_change = dt_dic['ref_ctg_change']
+                        unknown_change = '.'
+                    else:
+                        known_change = '.'
+                        unknown_change = dt_dic['ref_ctg_change']
+                else:
+                    known_change, unknown_change = '.', '.'
+
+                if ref_name in res_dic.keys():
+                    indexes = list(res_dic[ref_name]['mutations'].keys())
+                    indexes.sort()
+                    index = indexes[-1] + 1
+                    if dt_dic['var_type'] == 'HET':
+                        res_dic[ref_name]['Warning_HET'] = 'warning:heterozygote'
+                    res_dic[ref_name]['mutations'][index] = {'unknown_change': unknown_change,
+                                                             'ref_ctg_change': dt_dic['ref_ctg_change'],
+                                                             'known_change': known_change,
+                                                             'searched_change': dt_dic['known_var_change'],
+                                                             'has_known_var': dt_dic['has_known_var'],
+                                                             'variant_type': dt_dic['var_type'],
+                                                             'variant_seq_type': dt_dic['var_seq_type'],
+                                                             'ref_ctg_effect': dt_dic['ref_ctg_effect'],
+                                                             'summary_substitution_depth': sub_depth,
+                                                             # 'ref_start':dtDic['ref_start'],
+                                                             # 'ref_end':dtDic['ref_end'],
+                                                             # 'ctg_nt':dtDic['ctg_nt']
+                                                             'nucleotide_change': nucleotide_change,
+                                                             # 'ctg_start':dtDic['ctg_start'],
+                                                             # 'ctg_end':dtDic['ctg_end'],
+                                                             'detected_nucleotide': dt_dic['smtls_nts'],
+                                                             'depth_by_detected_nucleotide': dt_dic['smtls_nts_depth'],
+                                                             'total_depth_by_nucleotide': dt_dic['smtls_total_depth']
+                                                             }
+                else:
+                    res_dic[ref_name] = {'pc_identity': dt_dic['pc_ident'], 'pc_coverage': dt_dic['pc_coverage'],
+                                         'gene': dt_dic['gene'],
+                                         'var_only': dt_dic['var_only'],
+                                         'flag': dt_dic['flag'],
+                                         'ctg_name': dt_dic['ctg'],
+                                         # 'ctg_len':dtDic['ctg_len'],
+                                         'mean_depth': dt_dic['ctg_cov'],
+                                         'known_var': dt_dic['known_var'],
+                                         'dna_sequence': dna_rec,
+                                         'prot_sequence': prot_rec,
+                                         'mutations': {
+                                             n: {'unknown_change': unknown_change,
+                                                 'ref_ctg_change': dt_dic['ref_ctg_change'],
+                                                 'known_change': known_change,
+                                                 'the_searched_change': dt_dic['known_var_change'],
+                                                 'has_known_var': dt_dic['has_known_var'],
+                                                 'variant_type': dt_dic['var_type'],
+                                                 'variant_seq_type': dt_dic['var_seq_type'],
+                                                 'ref_ctg_effect': dt_dic['ref_ctg_effect'],
+                                                 'summary_substitution_depth': sub_depth,
+                                                 # 'ref_start':dtDic['ref_start'],
+                                                 # 'ref_end':dtDic['ref_end'],
+                                                 # 'ref_nt':dtDic['ref_nt'],
+                                                 # 'ctg_start':dtDic['ctg_start'],
+                                                 # 'ctg_end':dtDic['ctg_end'],
+                                                 # 'ctg_nt':dtDic['ctg_nt'],
+                                                 'nucleotide_change': nucleotide_change,
+                                                 'detected_nucleotide': dt_dic['smtls_nts'],
+                                                 'depth_by_detected_nucleotide': dt_dic['smtls_nts_depth'],
+                                                 'total_depth_by_nucleotide': dt_dic['smtls_total_depth']
+                                                 }}}
+
+                    if dt_dic['var_type'] == 'HET':
+                        res_dic[ref_name]['Warning_HET'] = 'warning:heterozygote'
+
+                    if float(dt_dic['pc_coverage']) < 95.0:
+                        res_dic[ref_name]['Warning_COV'] = 'warning:truncation'
+
+    return res_dic
+
+
+def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth):
+    txt = ''
+    for i in range(0, len(smtls_total_depth.split(';'))):
+        nt = smtls_nts.split(';')[i]
+        depth = smtls_nts_depth.split(';')[i]
+        total_depth = smtls_total_depth.split(';')[i]
+
+        if ',' not in nt:
+            # p_depth = int(depth) / float(total_depth)
+            txt = txt + '|{0}[{1}/{2}]'.format(nt, depth, total_depth)
+        else:
+            for j in range(0, len(nt.split(','))):
+                n = nt.split(',')[j]
+                d = depth.split(',')[j]
+                # p_depth = int(d) / float(total_depth)
+                if j == 0:
+                    txt = txt + '|{0}[{1}/{2}]'.format(n, d, total_depth)
+                else:
+                    txt = txt + ',{0}[{1}/{2}]'.format(n, d, total_depth)
+    txt = txt[1:]
+
+    txt = '{0}->{1} {2}'.format(ref_nt, ctg_nt, txt)
+    if txt == '.->. .[./.]':
+        txt = '.'
+
+    return txt
+
+
+def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
+    log_message = ""
+
+    with open(resu_file, 'a') as f:
+        del_keys = []
+        del_n_muts = []
+        del_no_muts = []
+        for key in res_dic.keys():
+
+            # filter target coverage < pass_cov
+            if float(res_dic[key]['pc_coverage']) < pass_cov:
+                del_keys.append(key)
+                f.write('Filter pc_coverage < {0}\n:'.format(pass_cov))
+                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+
+                # Alarm with id >= 90 and pass_id > 40
+                if float(res_dic[key]['pc_identity']) >= pass_id and float(res_dic[key]['pc_coverage']) > 50:
+                    log_message = log_message + "\n############################################################\n"
+                    log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
+                    log_message = log_message + "############################################################\n"
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
+                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                                res_dic[key]['mean_depth'])
+                    log_message = log_message + "\nThe record will be deleted in the final results\n"
+
+            # filter id percentage < pass_id
+            if float(res_dic[key]['pc_identity']) < pass_id:
+                del_keys.append(key)
+                f.write('Filter pc_identity < {0}\n:'.format(pass_id))
+                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+
+                # Alarm if id >= 40 and cov >=75
+                if float(res_dic[key]['pc_identity']) >= 40 and float(res_dic[key]['pc_coverage']) >= 80:
+                    log_message = log_message + "\n############################################################\n"
+                    log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
+                    log_message = log_message + "############################################################\n"
+                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
+                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                                res_dic[key]['mean_depth'])
+                    log_message = log_message + "\nThe record will be deleted in the final results\n"
+
+            if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= pass_id \
+                    and float(res_dic[key]['pc_coverage']) > pass_cov:
+                log_message = log_message + "\n####################################################################\n"
+                log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
+                log_message = log_message + "####################################################################\n"
+                log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
+                    .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
+                            res_dic[key]['mean_depth'])
+                log_message = log_message + "\nThe record will be kept in the final results\n"
+
+            # filter
+            if res_dic[key]['var_only'] == '1':
+                # filter SNP detection in wrong taxonomy
+                del_keys = taxon_snp(del_keys, key, species)
+                f.write('Filter wrong taxonomy\n:')
+                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+                # filter SNP search with no SNP
+                del_no_muts, del_keys = no_change(del_no_muts, del_keys, res_dic, key)
+
+            # filter nts SNP if not searched
+            del_n_muts = unknown_synonymous(del_n_muts, res_dic, key)
+
+        # Deletion SNP in records
+        for key, n in del_n_muts:
+            f.write('Filter nts SNP if not searched\n:')
+            f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
+            del res_dic[key]['mutations'][n]
+
+        for key, n in del_no_muts:
+            try:
+                del res_dic[key]['mutations'][n]
+                if key != '':
+                    f.write('Filter SNP search with no SNP\n:')
+                    f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
+            except Exception as e:
+                log_message = log_message + "Warning: Problem to deletion SNP. {0}".format(e)
+
+    # Deletion of records
+    for key in list(set(del_keys)):
+        del res_dic[key]
 
     return res_dic, log_message
 
 
-def score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic):
-    """
-    This function filter the score results of the virulence detection
-    :param res_dic: The dict of results of virulence detection
-    :param gene_vir_dic: The dict of gene by virulence reference
-    :param vf_vir_dic: The dict of virulence reference by strain
-    :param clu_dic:
-    :return: The dict of score filtered and updated
-    """
-    log_message = ""
-    vf_list = []
-    for key in res_dic.keys():
-        vf_list.append(gene_vir_dic[key]['VF_Accession'])
-    vf_list = list(set(vf_list))
+def unknown_synonymous(del_n_muts, res_dic, key):
+    for n in res_dic[key]['mutations'].keys():
+        if res_dic[key]['mutations'][n]['variant_seq_type'] == 'n' and \
+                res_dic[key]['mutations'][n]['known_change'] == '.':
+            del_n_muts.append([key, n])
+    return del_n_muts
 
-    score_dic = {}
-    for vf in vf_list:
-        strain_list = list(vf_vir_dic[vf].keys())
-        strain_list.sort()
-        for key in strain_list:
-            total_gene = 0
-            positive_gene = 0
-            gene_list = vf_vir_dic[vf][key]
-            gene_list.sort()
-            gene_dic = {}
-            for gene_id in gene_list:
-                total_gene += 1
-                try:
-                    pc_coverage = res_dic[gene_id]['pc_coverage']
-                    pc_identity = res_dic[gene_id]['pc_identity']
-                    positive_gene += 1
-                except KeyError:
-                    pc_coverage = '.'
-                    pc_identity = '.'
 
-                gene_dic[gene_id] = {'pc_coverage': pc_coverage, 'pc_identity': pc_identity}
+def no_change(del_no_muts, del_keys, res_dic, key):
+    no_change_found = True
+    for n in res_dic[key]['mutations'].keys():
+        if res_dic[key]['mutations'][n]['known_change'] == '.' \
+                and res_dic[key]['mutations'][n]['unknown_change'] == '.':
+            del_no_muts.append([key, n])
+        else:
+            no_change_found = False
+    if no_change_found:
+        del_keys.append(key)
 
-            if positive_gene > 0:
-                if vf in score_dic.keys():
-                    score_dic[vf][key] = {'gene_dic': gene_dic}
-                    score_dic[vf][key]['score'] = {'positive_gene': positive_gene, 'total_gene': total_gene}
-                else:
-                    score_dic[vf] = {key: {'gene_dic': gene_dic}}
-                    score_dic[vf][key]['score'] = {'positive_gene': positive_gene, 'total_gene': total_gene}
+    return del_no_muts, del_keys
 
-    # Display the result of virulence detection
-    log_message = log_message + print_score_dic(score_dic, vf_vir_dic, gene_vir_dic)
 
-    log_message = log_message + "\nUpdated results:\n"
+def taxon_snp(del_keys, key, species, sep=','):
+    pattern = re.compile('[0-9]+[.][0-9]+[_]{2}.+[_]{2}([A-Za-z0-9, _]+)[_]')
+    entero_bacteriaceae = ['citrobacter freundii', 'enterobacter cloacae', 'enterobacter aerogenes',
+                           'enterobacter asburiae', 'enterobacter hormaechei', 'escherichia coli',
+                           'hafnia alvei', 'klebsiella pneumoniae', 'salmonella enteritidis']
+    enterobacter_cloacae_complex = ['enterobacter cloacae', 'enterobacter asburiae', 'enterobacter hormaechei',
+                                    'enterobacter kobei', 'enterobacter mori', 'enterobacter ludwigii',
+                                    'enterobacter xiangfangensis']
 
-    updated_dic = copy.deepcopy(score_dic)
-    vf_list = list(score_dic.keys())
-    vf_list.sort()
+    match = pattern.match(key)
+    if match:
+        taxons = match.group(1).split(sep)
+        for n, taxon in enumerate(taxons):
+            taxons[n] = taxon.lower().replace('_', ' ')
+        if 'enterobacteriaceae' in taxons:
+            taxons = taxons + entero_bacteriaceae
+        if 'enterobacter cloacae complex' in taxons:
+            taxons = taxons + enterobacter_cloacae_complex
 
-    max_pos_vf = {}
-    max_t_gene_vf = {}
+        if species.lower() not in taxons:
+            del_keys.append(key)
 
-    vf2 = ""
-    key_strain2 = ""
-    for vf in vf_list:
-        strain_list = list(score_dic[vf].keys())
-        strain_list.sort()
+    return del_keys
 
-        for strain in strain_list:
-            positive_gene = score_dic[vf][strain]['score']['positive_gene']
-            total_gene = score_dic[vf][strain]['score']['total_gene']
-            if vf not in max_pos_vf.keys():
-                max_pos_vf[vf] = positive_gene
-                max_t_gene_vf[vf] = total_gene
+
+def check_allele(res_dic, dt_base_file):
+    vir_dic, log_message = load_vir_arm_db(dt_base_file)
+
+    perfect_nucl_match = 0
+    perfect_prot_match = 0
+
+    # explore each gene result of ariba
+    for res_key in res_dic.keys():
+        vir_key_1 = res_key.split('__')[0]
+        data = res_dic[res_key]
+
+        res_seq_nucl = str(data['dna_sequence'].seq)
+        vir_seq_nucl = str(vir_dic[vir_key_1]['dna_sequence'])
+
+        # test if the ariba result matches perfectly with an existing nucl sequence in database
+        if res_seq_nucl == vir_seq_nucl:
+            perfect_nucl_match += 1
+            res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
+            continue
+
+        # lot of case where the truly result is the translated prot sequence against the nucl sequence in database
+        else:
+
+            found = True
+            # case of gene coding (cds) in ariba result
+            if data['gene'] == '1':
+                res_seq_prot = translate_dna(data['dna_sequence'].seq)
+                vir_seq_prot = translate_dna(Seq(vir_dic[vir_key_1]['dna_sequence']))
+                # if the ariba result in prot match perfectly with the prot translation of an existing nucl sequence
+                # in database
+                if str(res_seq_prot) == str(vir_seq_prot) and res_seq_prot != '':
+                    res_dic = update_res(res_dic, res_key, vir_dic, vir_key_1)
+                # if the match doesnt appear
+                elif res_seq_prot != '':
+                    # for each existing entry in the database
+                    for vir_key_2 in vir_dic.keys():
+                        # translate into protein an entry of the nucl sequence in database
+                        vir_seq_prot = translate_dna(Seq(vir_dic[vir_key_2]['dna_sequence']))
+                        # if the ariba result in prot match perfectly with the prot translation of an existing nucl
+                        # sequence in database
+                        if str(vir_seq_prot) == str(res_seq_prot):
+                            found = False
+                            res_dic = update_res(res_dic, res_key, vir_dic, vir_key_2)
+                            break
+
+                # if any match founded. the ariba result will be conserved
+                if found:
+                    res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
+            # case of gene no coding (dna) in ariba result
             else:
-                if positive_gene > max_pos_vf[vf]:
-                    max_pos_vf[vf] = positive_gene
-                if total_gene > max_t_gene_vf[vf]:
-                    max_t_gene_vf[vf] = total_gene
-            gene_list = vf_vir_dic[vf][strain]
-            gene_list.sort()
-
-            txt = ''
-            vf_name = ''
-
-            for gene_id in gene_list:
-                vf_name = gene_vir_dic[gene_id]['VF_Name']
-                gene_name = gene_vir_dic[gene_id]['gene_name']
-
-                try:
-                    homolog_gene_ids = clu_dic[vf][gene_id]
-                except KeyError:
-                    homolog_gene_ids = []
-
-                homolog_gene_id = ''
-                vf2_name = ''
-                gene2_name = ''
-                genus2 = ''
-                species2 = ''
-                strain2 = ''
-
-                for homolog_gene_id in homolog_gene_ids:
-                    if homolog_gene_id in res_dic.keys():
-                        vf2 = gene_vir_dic[homolog_gene_id]['VF_Accession']
-                        vf2_name = gene_vir_dic[homolog_gene_id]['VF_Name']
-                        gene2_name = gene_vir_dic[homolog_gene_id]['gene_name']
-                        genus2 = gene_vir_dic[homolog_gene_id]['genus']
-                        species2 = gene_vir_dic[homolog_gene_id]['species']
-                        strain2 = gene_vir_dic[homolog_gene_id]['strain'].replace(' ', '_')
-                        key_strain2 = '{0}__{1}__{2}'.format(genus2, species2, strain2)
+                res_seq_prot = data['dna_sequence'].seq
+                for vir_key_2 in vir_dic.keys():
+                    vir_seq_prot = vir_dic[vir_key_2]['dna_sequence']
+                    if str(vir_seq_prot) == str(res_seq_prot):
+                        found = False
+                        res_dic = update_res(res_dic, res_key, vir_dic, vir_key_2)
                         break
+                if found:
+                    res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
+
+    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
+    log_message = log_message + "Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of " \
+                                "total results\n" \
+        .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match / len(res_dic) * 100), 2))
+    log_message = log_message + "Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total" \
+                                " results\n" \
+        .format(os.path.basename(dt_base_file), perfect_prot_match, round((perfect_prot_match / len(res_dic) * 100), 2))
+
+    return res_dic, log_message
+
+
+def add_res(res_dic, res_key, vir_dic, vir_key):
+    res_dic[res_key]['designation'] = vir_dic[vir_key]['entry_name']
+    res_dic[res_key]['keyDB'] = vir_key
+    res_dic[res_key]['comment'] = vir_dic[vir_key]['comment']
+    res_dic[res_key]['alternative_designation'] = vir_dic[vir_key]['alternative_names']
+    res_dic[res_key]['searched_dna_changes'] = vir_dic[vir_key]['dna_snp']
+    res_dic[res_key]['searched_prot_changes'] = vir_dic[vir_key]['prot_snp']
+    res_dic[res_key]['ATB_groups'] = vir_dic[vir_key]['antibiotic_family']
+    res_dic[res_key]['mechanism_groups'] = vir_dic[vir_key]['mechanism_names']
+    return res_dic
+
+
+def update_res(res_dic, res_key, vir_dic, vir_key):
+    res_dic[res_key]['designation'] = vir_dic[vir_key]['entry_name']
+    res_dic[res_key]['keyDB'] = vir_key
+    res_dic[res_key]['comment'] = vir_dic[vir_key]['comment']
+    res_dic[res_key]['alternative_designation'] = vir_dic[vir_key]['alternative_names']
+    res_dic[res_key]['searched_dna_changes'] = vir_dic[vir_key]['dna_snp']
+    res_dic[res_key]['searched_prot_changes'] = vir_dic[vir_key]['prot_snp']
+    res_dic[res_key]['ATB_groups'] = vir_dic[vir_key]['antibiotic_family']
+    res_dic[res_key]['mechanism_groups'] = vir_dic[vir_key]['mechanism_names']
+    res_dic[res_key]['pc_identity'] = '100.00'
+    res_dic[res_key]['pc_coverage'] = '100.00'
+    res_dic[res_key]['pc_coverage'] = '100.00'
+    res_dic[res_key]['variant_seq_type'] = '.'
+    res_dic[res_key]['known_change'] = '.'
+    res_dic[res_key]['unknown_change'] = '.'
+    res_dic[res_key]['summary_substitution_depth'] = '.'
+    res_dic[res_key]['nucleotide_change'] = '.'
+    res_dic[res_key]['detected_nucleotide'] = '.'
+    res_dic[res_key]['depth_by_detected_nucleotide'] = '.'
+    res_dic[res_key]['total_depth_by_nucleotide'] = '.'
+    return res_dic
+
+
+def write_csv_result(res_dic, out_dir, dt_basename):
+    nw_res_dict = {}
+    n = 0
+    for key in res_dic.keys():
+        for key1 in res_dic[key]['mutations'].keys():
+            nw_res_dict[n] = {}
+            for key2 in res_dic[key]['mutations'][key1].keys():
+                nw_res_dict[n][key2] = res_dic[key]['mutations'][key1][key2]
+            for key3 in res_dic[key].keys():
+                if key3 != 'mutations':
+                    if key3 == 'dna_sequence':
+                        nw_res_dict[n][key3] = str(res_dic[key][key3].seq)
                     else:
-                        homolog_gene_id = ''
+                        nw_res_dict[n][key3] = res_dic[key][key3]
+            n += 1
 
-                pc_coverage = str(score_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'])
-                pc_identity = str(score_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
-
-                if pc_coverage == '.' and pc_identity == '.' and homolog_gene_id != '':
-                    updated_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'] = \
-                        score_dic[vf2][key_strain2]['gene_dic'][homolog_gene_id]['pc_coverage']
-                    updated_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'] = \
-                        score_dic[vf2][key_strain2]['gene_dic'][homolog_gene_id]['pc_identity']
-                    updated_dic[vf][strain]['gene_dic'][gene_id]['homolog'] = 'VF_id:{0},VF_name:{1},genus:{2},' \
-                                                                              'species:{3},strain:{4},gene_id:{5},' \
-                                                                              'gene_name:{6}'.\
-                        format(vf2, vf2_name, genus2, species2, strain2, homolog_gene_id, gene2_name)
-                    pc_coverage = str(updated_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'])
-                    pc_identity = str(updated_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
-                    updated_dic[vf][strain]['score']['positive_gene'] += 1
-                    gene_name = '{0}={1}'.format(gene_name, gene2_name)
-
-                txt = txt + ' gene: {0} [{1}/{2}]'.format(gene_name, pc_identity, pc_coverage)
-
-            txt = txt[1:]
-            log_message = log_message + "UPDATED : VF_id: {0}\t{1}\tVF_name: {2}\tScore: {3}/{4}\t{5}\n"\
-                .format(vf, strain, vf_name, positive_gene, total_gene, txt)
-
-    rm_dic = {}
-    kp_dic = {}
-
-    # get strain to remove of final results
-    for vf in updated_dic.keys():
-        max_pos = max_pos_vf[vf]
-        for strain in updated_dic[vf].keys():
-            positive_gene = score_dic[vf][strain]['score']['positive_gene']
-            if positive_gene < max_pos:
-                if vf not in rm_dic.keys():
-                    rm_dic[vf] = [strain]
-                else:
-                    rm_dic[vf].append(strain)
+    arrays_items = ['keyDB', 'designation', 'pc_identity', 'pc_coverage', 'mean_depth', 'variant_seq_type',
+                    'known_change', 'unknown_change',
+                    'nucleotide_change', 'detected_nucleotide', 'depth_by_detected_nucleotide',
+                    'ATB_groups', 'mechanism_groups',
+                    'alternative_designation', 'searched_prot_changes', 'searched_dna_changes', 'comment',
+                    'dna_sequence', 'prot_sequence']
+    res_list = []
+    sort_list = list(nw_res_dict.keys())
+    sort_list.sort()
+    for i in sort_list:
+        line_list = []
+        for item in arrays_items:
+            if item in ['pc_identity', 'pc_coverage']:
+                line_list.append(float(nw_res_dict[i][item]))
             else:
-                if vf not in kp_dic.keys():
-                    kp_dic[vf] = [strain]
+                if item == 'designation':
+                    txt = ''
+                    if 'Warning_HET' in nw_res_dict[i].keys():
+                        txt = nw_res_dict[i]['Warning_HET'] + ','
+                    if 'Warning_COV' in nw_res_dict[i].keys():
+                        txt = txt + nw_res_dict[i]['Warning_COV'] + ','
+                    txt = txt + nw_res_dict[i][item]
+                    line_list.append(txt)
                 else:
-                    kp_dic[vf].append(strain)
-    # get strain to remove of final results
-    for vf in kp_dic.keys():
-        if len(kp_dic[vf]) > 1:
-            max_t_gene = max_t_gene_vf[vf]
-            for strain in kp_dic[vf]:
-                total_gene = score_dic[vf][strain]['score']['total_gene']
-                if total_gene < max_t_gene:
-                    if vf not in rm_dic.keys():
-                        rm_dic[vf] = [strain]
-                    else:
-                        rm_dic[vf].append(strain)
+                    line_list.append(nw_res_dict[i][item])
+        res_list.append(line_list)
 
-    # remove the strain unwanted
-    for vf in rm_dic.keys():
-        for strain in rm_dic[vf]:
-            del updated_dic[vf][strain]
-            if updated_dic[vf] == {}:
-                log_message = log_message + "DELETE VF {0}\n".format(vf)
-                del updated_dic[vf]
+    df = pd.DataFrame.from_records(res_list, columns=arrays_items)
+    df.sort_values(by=['pc_coverage', 'pc_identity', 'keyDB', 'designation', 'known_change', 'unknown_change'],
+                   ascending=[False, False, True, True, False, False], inplace=True)
 
-    log_message = log_message + "\nPurged results:\n"
-    log_message = log_message + print_score_dic(updated_dic, vf_vir_dic, gene_vir_dic)
-
-    log_message = log_message + "\nFiltering finish !\n"
-
-    return updated_dic, log_message
+    writer = pd.ExcelWriter(os.path.join(out_dir, 'results_{0}.xlsx'.format(dt_basename)))
+    df.to_excel(writer, 'sheet1', index=False)
+    writer.save()
+    df.to_csv(os.path.join(out_dir, 'results_{0}.tsv'.format(dt_basename)), sep='\t', index=False)
 
 
-def print_score_dic(score_dic, vf_vir_dic, gene_vir_dic):
-    """
-    This function prints the results of the virulence detection
-    :param score_dic: the dict with score result records
-    :param vf_vir_dic: the dict with virulence reference by species
-    :param gene_vir_dic: the dict of gene ref by virulence reference
-    :return: nothing
-    """
-    log_message = ""
-    vf_list = list(score_dic.keys())
-    vf_list.sort()
-    for i, vf in enumerate(vf_list):
-        strain_list = list(score_dic[vf].keys())
-        strain_list.sort()
-        for strain in strain_list:
-            positive_gene = score_dic[vf][strain]['score']['positive_gene']
-            total_gene = score_dic[vf][strain]['score']['total_gene']
-            score = '{0}/{1}'.format(positive_gene, total_gene)
-            gene_list = vf_vir_dic[vf][strain]
-            gene_list.sort()
+def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
+    csv_dic = {}
+    xls_dic = {}
+    dna_records = []
+    prot_records = []
+    keys = list(res_dic.keys())
+    keys.sort()
+    for key in keys:
+        sequence_id = '{0}__ctg_X__{1}_locusX__{2}__{3}'.format(
+            sample_id, sample_id, res_dic[key]['designation'], res_dic[key]['keyDB'])
+        description = 'func:{0},mechanism:{1},id:{2},cov:{3},dep:{4}'.format(res_dic[key]['ATB_groups'],
+                                                                             res_dic[key]['mechanism_groups'],
+                                                                             res_dic[key]['pc_identity'],
+                                                                             res_dic[key]['pc_coverage'],
+                                                                             res_dic[key]['mean_depth'])
 
-            txt = ''
-            vf_name = ''
+        col_name = '{0}::{1}::{2}'.format(res_dic[key]['ATB_groups'], res_dic[key]['designation'],
+                                          res_dic[key]['keyDB'])
 
-            for gene_id in gene_list:
-                vf_name = gene_vir_dic[gene_id]['VF_Name']
-                gene_name = gene_vir_dic[gene_id]['gene_name']
+        val_name = ''
+        if 'Warning_HET' in res_dic[key].keys():
+            val_name = res_dic[key]['Warning_HET'] + ','
+        if 'Warning_COV' in res_dic[key].keys():
+            val_name = res_dic[key]['Warning_COV'] + ','
+        val_name = val_name + 'id:{0},cov:{1},dep:{2}'.format(
+            res_dic[key]['pc_identity'], res_dic[key]['pc_coverage'], res_dic[key]['mean_depth'])
 
-                pc_coverage = str(score_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'])
-                pc_identity = str(score_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
-
-                if 'homolog' in score_dic[vf][strain]['gene_dic'][gene_id].keys():
-                    homolog = score_dic[vf][strain]['gene_dic'][gene_id]['homolog']
-                    txt = txt + 'gene: {0} [{1}: {2}/{3}]\t'.format(gene_name, homolog, pc_identity, pc_coverage)
+        snp, sub = {}, {}
+        if res_dic[key]['var_only'] == '1':
+            for key2 in res_dic[key]['mutations'].keys():
+                if res_dic[key]['mutations'][key2]['variant_seq_type'] == 'p':
+                    var_sequence_type = 'pt'
+                elif res_dic[key]['mutations'][key2]['variant_seq_type'] == 'n':
+                    var_sequence_type = 'nt'
                 else:
-                    txt = txt + 'gene: {0} [{1}/{2}]\t'.format(gene_name, pc_identity, pc_coverage)
+                    var_sequence_type = '?'
 
-            txt = txt[:-1]
-            log_message = "RESULTS : {0}\t{1}\t{2}\t{3}\t{4}\n".format(vf, strain, vf_name, score, txt)
+                if res_dic[key]['mutations'][key2]['known_change'] != '.':
+                    try:
+                        snp[var_sequence_type].append(res_dic[key]['mutations'][key2]['known_change'])
+                    except KeyError:
+                        snp[var_sequence_type] = [res_dic[key]['mutations'][key2]['known_change']]
 
-    return log_message
+                if res_dic[key]['mutations'][key2]['unknown_change'] != '.':
+                    try:
+                        sub[var_sequence_type].append(res_dic[key]['mutations'][key2]['unknown_change'])
+                    except KeyError:
+                        sub[var_sequence_type] = [res_dic[key]['mutations'][key2]['unknown_change']]
+        snp_txt = ''
+        if snp != {}:
+            for key3 in snp.keys():
+                snp_txt = snp_txt + ',snp:{0}[{1}]'.format('|'.join(snp[key3]), key3)
+            description = description + snp_txt
+            val_name = val_name + snp_txt
 
+        if snp_txt == '' and res_dic[key]['var_only'] == '1':
+            val_name = val_name + ',snp:None'
 
-def write_csv_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename):
-    with open(os.path.join(out_dir, 'results_{0}.csv'.format(dt_basename)), 'w') as f:
-        f.write('VF_Accession\tStrain\tVF_Name\tScore\tGenes')
-        vf_list = list(res_dic.keys())
-        vf_list.sort()
-        for vf in vf_list:
-            strain_list = list(res_dic[vf].keys())
-            strain_list.sort()
-            for strain in strain_list:
-                positive_gene = res_dic[vf][strain]['score']['positive_gene']
-                total_gene = res_dic[vf][strain]['score']['total_gene']
-                score = '{0}/{0}'.format(positive_gene, total_gene)
+        sub_txt = ''
+        if sub != {}:
+            for key3 in sub.keys():
+                sub_txt = sub_txt + ',sub:{0}[{1}]'.format('|'.join(sub[key3]), key3)
+            description = description + sub_txt
+            val_name = val_name + sub_txt
 
-                gene_list = vf_vir_dic[vf][strain]
-                gene_list.sort()
+        record = False
+        if res_dic[key]['var_only'] == '0':
+            record = True
+        elif snp != {}:
+            record = True
+        elif sub != {}:
+            record = True
 
-                txt = ''
-                vf_name = ''
+        if record:
+            csv_dic[col_name] = val_name
 
-                for gene_id in gene_list:
-                    vf_name = gene_vir_dic[gene_id]['VF_Name']
-                    gene_name = gene_vir_dic[gene_id]['gene_name']
+            dna_sequence = SeqRecord(res_dic[key]['dna_sequence'].seq, id=sequence_id, name=sequence_id,
+                                     description=description)
+            dna_records.append(dna_sequence)
+            if res_dic[key]['prot_sequence'] != '.' and res_dic[key]['prot_sequence'] != '.':
+                prot_sequence = SeqRecord(Seq(res_dic[key]['prot_sequence']), id=sequence_id, name=sequence_id,
+                                          description=description)
+                prot_records.append(prot_sequence)
 
-                    pc_coverage = str(res_dic[vf][strain]['gene_dic'][gene_id]['pc_coverage'])
-                    pc_identity = str(res_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
+    SeqIO.write(dna_records, open(os.path.join(out_dir, 'results_{0}.fna'.format(dt_basename)), 'w'), 'fasta')
+    SeqIO.write(prot_records, open(os.path.join(out_dir, 'results_{0}.faa'.format(dt_basename)), 'w'), 'fasta')
 
-                    if 'homolog' in res_dic[vf][strain]['gene_dic'][gene_id].keys():
-                        homolog = res_dic[vf][strain]['gene_dic'][gene_id]['homolog']
-                        txt = txt + 'gene:{0},homolog:{1},pc_id:{2},pc_cv:{3}\t'.format(
-                            gene_name, homolog, pc_identity, pc_coverage)
-                    else:
-                        txt = txt + 'gene:{0},pc_id:{1},pc_cv:{2}\t'.format(gene_name, pc_identity, pc_coverage)
-                txt = '{0}\t{1}\t{2}\t{3}\t{4}\n'.format(vf, strain, vf_name, score, txt)
-                f.write(txt)
+    df = pd.DataFrame(csv_dic, index=[sample_id, ])
+    df.sort_index(axis=1, inplace=True)
+    df.to_csv(os.path.join(out_dir, 'summary_results_{0}.csv'.format(dt_basename)), sep='\t', index=False)
 
+    for key in csv_dic.keys():
+        keys = key.split('::')
+        try:
+            xls_dic[keys[0]]['::'.join(keys[1:])] = csv_dic[key]
+        except KeyError:
+            xls_dic[keys[0]] = {'::'.join(keys[1:]): csv_dic[key]}
 
-def write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename, sample_id):
-    """
-
-    :param res_dic:
-    :param vf_vir_dic:
-    :param gene_vir_dic:
-    :param out_dir:
-    :param dt_basename:
-    :param sample_id:
-    :return:
-    """
-
+    sheet_names = list(xls_dic.keys())
+    sheet_names.sort()
     writer = pd.ExcelWriter(os.path.join(out_dir, 'summary_results_{0}.xlsx'.format(dt_basename)))
-    vf_list = list(res_dic.keys())
-    vf_list.sort()
-    vf_sheet_hash = {}
-
-    for vf in vf_list:
-        strain_list = list(res_dic[vf].keys())
-        strain_list.sort()
-        for strain in strain_list:
-            # positive_gene = res_dic[vf][strain]['score']['positive_gene']
-            # total_gene = res_dic[vf][strain]['score']['total_gene']
-            # score = '%i/%i' % (positive_gene, total_gene)
-
-            gene_list = vf_vir_dic[vf][strain]
-            gene_list.sort()
-            data = OrderedDict()
-            # data['sample_id'] = sample_id
-            data['Strain'] = strain
-
-            for gene_id in gene_list:
-                vf_name = gene_vir_dic[gene_id]['VF_Name']
-                gene_name = gene_vir_dic[gene_id]['gene_name']
-
-                pc_identity = str(res_dic[vf][strain]['gene_dic'][gene_id]['pc_identity'])
-                if 'homolog' in res_dic[vf][strain]['gene_dic'][gene_id].keys():
-                    homologs = res_dic[vf][strain]['gene_dic'][gene_id]['homolog'].split(',')
-
-                    h_genus = ''
-                    h_species = ''
-                    h_strain = ''
-
-                    for item in homologs:
-                        if 'species' in item:
-                            h_species = item.split(':')[1]
-                        if 'genus' in item:
-                            h_genus = item.split(':')[1]
-                        if 'strain' in item:
-                            h_strain = item.split(':')[1]
-                    h_strain = '{0}__{1}__{2}'.format(h_genus, h_species, h_strain)
-
-                    pc_identity = pc_identity + ' [{0}]'.format(h_strain)
-
-                data[gene_name] = pc_identity
-
-                # push data to common vf_sheet_hash
-                if vf_name in vf_sheet_hash:
-                    data_hash = vf_sheet_hash.get(vf_name)
-                    vf_sheet_hash[vf_name.lower()] = {**data_hash, **data}
-                else:
-                    vf_sheet_hash[vf_name.lower()] = data
-
-    for vf_name in vf_sheet_hash:
-        data = vf_sheet_hash.get(vf_name)
-        df = pd.DataFrame(data, index=[sample_id])
-        vf_name = vf_name.replace('/', ' ')
-
-        if len(vf_name) >= 31:
-            vf_name = vf_name[:30]
-
-        df.to_excel(writer, sheet_name=vf_name, index=True, index_label='sample_id')
-
+    for n, sheet_name in enumerate(sheet_names):
+        df = pd.DataFrame(xls_dic[sheet_name], index=[sample_id, ])
+        df.sort_index(axis=1, inplace=True)
+        df.to_excel(writer, sheet_name, index=False)
     writer.save()
 
 
@@ -493,36 +602,32 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     out_dir = os.path.join(wk_dir, sample_id)
 
     set_dic = read_setting_file(setting_file)
+
     sample_dic, sample_list = read_sample_file(sample_file)
+
     species = sample_dic[sample_id]
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
-    dt_base_file = os.path.join(db_path + "/dbVIR/", '_'.join(dt_basename.split('_')[:2]) + '.csv')
-    cluster_file = os.path.join(db_path + "/dbVIR/", '_'.join(dt_basename.split('_')[:2]) + '.clu')
+
+    dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
+    dt_basename = '{0}_ariba_{1}_{2}'.format(dt_basename_pre_split[0], dt_basename_pre_split[1], subgroup)
+    dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "{0}_{1}".format(*set_species[dt_base_type], subgroup) + '.tsv')
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')
     seq_file = os.path.join(out_dir, dt_basename, 'assembled_seqs.fa.gz')
 
-    res_dic, log_message_tmp = load_vir_res(tsv_file, gen_file, seq_file)
+    resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_results.txt')
+
+    res_dic = load_vir_res(tsv_file, gen_file, seq_file)
+
+    res_dic, log_message_tmp = filter_results(res_dic, species, resu_file)
     log_message = log_message + log_message_tmp
 
-    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
-
-    gene_vir_dic, vf_vir_dic, log_message_tmp = load_vir_db(dt_base_file)
-    log_message = log_message + log_message_tmp
-    clu_dic = load_clu_db(cluster_file)
-
-    resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_vir_results.txt')
-    res_dic, log_message_tmp = filter_results(res_dic, resu_file, pass_cov=70, pass_id=70)
-    log_message = log_message + log_message_tmp
-    log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
-
-    res_dic, log_message_tmp = score_results(res_dic, gene_vir_dic, vf_vir_dic, clu_dic)
+    res_dic, log_message_tmp = check_allele(res_dic, dt_base_file)
     log_message = log_message + log_message_tmp
 
-    write_csv_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename)
-    write_summary_result(res_dic, vf_vir_dic, gene_vir_dic, out_dir, dt_basename, sample_id)
+    write_csv_result(res_dic, out_dir, dt_basename)
+    write_summary_result(res_dic, out_dir, dt_basename, sample_id)
 
     return log_message
 
@@ -533,11 +638,10 @@ def version():
 
 def run():
     parser = argparse.ArgumentParser(description='parse__detection - Version ' + version())
-    parser.add_argument('-s', '--sampleID', dest="sampleID", default='27841', help='Sample ID')
-    parser.add_argument('-sf', '--sampleFile', dest="sampleFile", default='', help='Sample file')
+    parser.add_argument('-s', '--sampleID', dest="sampleID", default='CNR1979', help='Sample ID')
+    parser.add_argument('-sf', '--sampleFile', dest="sampleFile", default='sample.csv', help='Sample file')
     parser.add_argument('-d', '--dtbase', dest="dtbase", default='vir', help="Database name")
-    parser.add_argument('-wd', '--wkDir', dest="wkDir", default='/home/bacteriologie/ariba/anses/mcr-3',
-                        help="Working directory")
+    parser.add_argument('-wd', '--wkDir', dest="wkDir", default='', help="Working directory")
     parser.add_argument('-st', '--settingFile', dest="settingFile", default='/usr/local/readmapper-v0.1/setting.txt',
                         help="Setting file")
     parser.add_argument('-sg', '--subGroup', dest="subGroup", default='default value in setting.txt',

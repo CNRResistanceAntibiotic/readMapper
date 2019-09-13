@@ -12,7 +12,7 @@ from docx.shared import Inches
 
 def read_summary_arm_results_csv_file(filename, sep='\t'):
     if os.path.exists(filename):
-        dataDict = {}
+        data_dict = {}
         with open(filename, 'r') as f:
             header = ""
             for n, line in enumerate(f):
@@ -21,14 +21,14 @@ def read_summary_arm_results_csv_file(filename, sep='\t'):
                     header = line
                 elif n == 1:
                     data = line
-                    dataDict = dict(zip(header, data))
+                    data_dict = dict(zip(header, data))
 
         atbDic = {}
-        for key in dataDict.keys():
+        for key in data_dict.keys():
             keys = key.split('::')
             atb = keys[0]
             res = keys[1]
-            values = dataDict[key].split(',')
+            values = data_dict[key].split(',')
             dic = {}
             for value in values:
                 key, value = value.split(':')
@@ -60,9 +60,9 @@ def read_mlst_results_tsv_file(filename_list):
     return data_dic
 
 
-def read_species(samplefile, sample_id, sep='\t'):
-    if os.path.exists(samplefile):
-        with open(samplefile, 'r') as f:
+def read_species(sample_file, sample_id, sep='\t'):
+    if os.path.exists(sample_file):
+        with open(sample_file, 'r') as f:
             species = ""
             for n, line in enumerate(f):
                 if line.split(sep)[0] == sample_id:
@@ -71,7 +71,7 @@ def read_species(samplefile, sample_id, sep='\t'):
                     break
         return species
     else:
-        print('\nNo sample file {0}\n'.format(samplefile))
+        print('\nNo sample file {0}\n'.format(sample_file))
         exit(1)
 
 

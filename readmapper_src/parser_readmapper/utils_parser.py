@@ -89,7 +89,7 @@ def translate_dna(dna_object, table='Bacterial', cds=True):
         return prot
 
 
-def load_arm_db(inp_file):
+def load_vir_arm_db(inp_file):
     log_message = ""
     arm_dic = {}
     with open(inp_file, 'r') as f:
