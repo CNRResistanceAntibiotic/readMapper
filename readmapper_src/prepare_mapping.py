@@ -138,7 +138,8 @@ def pre_main(args):
     wk_dir = os.path.abspath(args.workDir)
     reads_dir = args.readsDir
     sample_file = args.sampleFile
-    subset_list = args.subset.split(',')
+    subset_arm_list = args.subsetARM.split(',')
+    subset_vir_list = args.subsetVIR.split(',')
     if args.force == "True":
         print("\nForce the preparation : \n", flush=True)
         force = args.force
@@ -148,10 +149,10 @@ def pre_main(args):
     # nucmer_min_id = args.nucmer_min_id
 
     # execute main
-    main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_list)
+    main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_arm_list, subset_vir_list)
 
 
-def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_list):
+def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_arm_list, subset_vir_list):
     db_dir = os.path.abspath(os.path.join(setting_file, os.pardir))
 
     if sample_file == '':
@@ -210,8 +211,8 @@ def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_li
 
                         subsets_name = ""
                         # get user selected subsets
-                        if subset_list:
-                            db_subset_list = subset_list
+                        if subset_arm_list:
+                            db_subset_list = subset_arm_list
 
                         for subset in db_subset_list:
                             if subset == 'all':
@@ -318,8 +319,8 @@ def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_li
 
                             subsets_name = ""
                             # get user selected subsets
-                            if subset_list:
-                                db_subset_list = subset_list
+                            if subset_vir_list:
+                                db_subset_list = subset_vir_list
 
                             for subset in db_subset_list:
                                 if subset == 'all':
@@ -372,8 +373,10 @@ def run():
     parser.add_argument('-F', '--force', dest="force", default=False, action='store_true',
                         help="Overwrite output directory, if it already exists [False]")
     parser.add_argument('-in', '--initial', dest="initial", default="RBO", help="Initial of user")
-    parser.add_argument('-sb', '--subset', dest="subset", default='GN',
+    parser.add_argument('-sbARM', '--subsetARM', dest="subsetARM", default='GN',
                         help="Comma separated value of database subset for ARM Database like (GN,Eff)")
+    parser.add_argument('-sbVIR', '--subsetVIR', dest="subsetVIR", default='GN',
+                        help="Comma separated value of database subset for VIR Database like (GN,Eff)")
     parser.add_argument('-V', '--version', action='version', version='prepare_mapping-' + version(),
                         help="Prints version number")
     args = parser.parse_args()

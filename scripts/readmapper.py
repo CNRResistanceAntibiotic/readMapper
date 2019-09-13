@@ -10,7 +10,8 @@ from readmapper_src import prepare_mapping, manager, write_merged_xlsx
 
 
 def main(args):
-    subset_list = []
+    subset_vir_list = []
+    subset_arm_list = []
 
     print("Version ReadMapper: ", version())
 
@@ -20,8 +21,10 @@ def main(args):
     database = os.path.abspath(args.database)
     initial = args.initial
     force = args.force
-    if args.subset:
-        subset_list = args.subset.split(',')
+    if args.subsetARM:
+        subset_arm_list = args.subsetARM.split(',')
+    if args.subsetVIR:
+        subset_vir_list = args.subsetVIR.split(',')
 
     if not sample_file:
         print("Sample file is missing !\n", flush=True)
@@ -59,7 +62,8 @@ def main(args):
     print("DataBase directory: {0}".format(database), flush=True)
     print("Setting File: {0}".format(set_file), flush=True)
     print("Initial user: {0}".format(initial), flush=True)
-    print("Subset selected: {0}".format(subset_list), flush=True)
+    print("Subset ARM selected: {0}".format(subset_arm_list), flush=True)
+    print("Subset VIR selected: {0}".format(subset_vir_list), flush=True)
     print("Force: {0}".format(force), flush=True)
     print("Application run at : {0}\n".format(dir_path), flush=True)
 
@@ -70,7 +74,7 @@ def main(args):
     print("\nRun the preparation : \n", flush=True)
 
     try:
-        prepare_mapping.main(set_file, wk_dir, reads, sample_file, force, initial, subset_list)
+        prepare_mapping.main(set_file, wk_dir, reads, sample_file, force, initial, subset_arm_list, subset_vir_list)
     except Exception as e:
         print(e, flush=True)
 
@@ -131,7 +135,9 @@ def run():
                         help="Working directory")
     parser.add_argument('-dd', '--databaseDir', dest="database", default='',
                         help="Setting file")
-    parser.add_argument('-sb', '--subset', dest="subset", default='',
+    parser.add_argument('-sbARM', '--subsetARM', dest="subsetARM", default='',
+                        help="Comma separated value of database subset for ARM Database like (GN,Eff)")
+    parser.add_argument('-sbVIR', '--subsetVIR', dest="subsetVIR", default='',
                         help="Comma separated value of database subset for ARM Database like (GN,Eff)")
     parser.add_argument('-i', '--initial', dest="initial", default='',
                         help="Initial of user")
