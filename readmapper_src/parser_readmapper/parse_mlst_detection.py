@@ -18,7 +18,7 @@ def load_mlst_res(mlst_file, res_dic, sep='\t'):
                     if i == 0:
                         res_dic[header[i]] = line[i]
                     else:
-                        res_dic['gene{0}'.format(i)] = '{0}:{1}'.format(header[i], line[i])
+                        res_dic[f'gene{i}'] = f'{header[i]}:{line[i]}'
     return res_dic
 
 
@@ -30,7 +30,7 @@ def write_csv_result(res_dic, out_dir, subgroup):
     df.to_excel(writer, mlst_name, index=False)
     writer.save()
 
-    df.to_csv(os.path.join(out_dir, 'mlst_report_{0}.tsv'.format(subgroup)), sep='\t', index=False)
+    df.to_csv(os.path.join(out_dir, f'mlst_report_{subgroup}.tsv'), sep='\t', index=False)
 
 
 def pre_main(args):
@@ -58,9 +58,9 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     set_dic = read_setting_file(setting_file)
     sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
-    log_message = log_message + "\nDetected species: {0}\n".format(species)
+    log_message = log_message + f"\nDetected species: {species}\n"
     set_species = set_dic[species.lower()]
-    dt_basename = '{0}_{1}'.format(*set_species[dt_base_type], subgroup)
+    dt_basename = "{0}_{1}".format(*set_species[dt_base_type], subgroup)
 
     tsv_file = os.path.join(out_dir, dt_basename, 'mlst_report.tsv')
 

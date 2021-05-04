@@ -10,14 +10,13 @@ from readmapper_src.parser_readmapper.utils_parser import gunzip_file, read_fast
 
 def load_rep_db(inp_file):
     log_message = ""
-    log_message = log_message + "database used: {0}\n".format(inp_file)
+    log_message = log_message + f"database used: {inp_file}\n"
     gene_rep_dic = {}
     with open(inp_file, 'r') as f:
         for n, rec in enumerate(SeqIO.parse(f, 'fasta')):
             gene_rep_dic[rec.id] = rec
-
-    log_message = log_message + "\nLoading of {0} done!\n".format(inp_file)
-    log_message = log_message + "Number of rep sequence: {0}\n".format(len(gene_rep_dic.keys()))
+    log_message = log_message + f"\nLoading of {inp_file} done!\n"
+    log_message = log_message + f"Number of rep sequence: {len(gene_rep_dic.keys())}\n"
     return gene_rep_dic, log_message
 
 
@@ -61,7 +60,7 @@ def load_rep_res(tsv_file, gen_file, seq_file):
                 ref_len = float(dtDic['ref_len'])
                 ref_base_assembled = int(dtDic['ref_base_assembled'])
                 cov = (ref_base_assembled / ref_len) * 100
-                dtDic['pc_coverage'] = '{0}'.format(round(cov, 2))
+                dtDic['pc_coverage'] = f'{round(cov, 2)}'
 
                 update = '1'
                 if ref_name in res_dic.keys():
@@ -82,7 +81,7 @@ def load_rep_res(tsv_file, gen_file, seq_file):
 
 
 def write_csv_result(res_dic, sample_id, out_dir, dt_basename):
-    with open(os.path.join(out_dir, 'results_{0}.csv'.format(dt_basename)), 'w') as f:
+    with open(os.path.join(out_dir, f'results_{dt_basename}.csv'), 'w') as f:
         f.write('sample_id\treplicon\tmean_depth\tpc_coverage\tpc_identity\tSequence\n')
         rep_list = list(res_dic.keys())
         rep_list.sort()
@@ -91,20 +90,18 @@ def write_csv_result(res_dic, sample_id, out_dir, dt_basename):
             pc_coverage = res_dic[rep_id]['pc_coverage']
             pc_identity = res_dic[rep_id]['pc_identity']
             dna_sequence = str(res_dic[rep_id]['dna_sequence'].seq)
-            txt = '{0}\t{1}\t{2}\t{3}\t{4}\t{5}\n'.format(sample_id, rep_id, mean_depth, pc_coverage, pc_identity,
-                                                          dna_sequence)
+            txt = f'{sample_id}\t{rep_id}\t{mean_depth}\t{pc_coverage}\t{pc_identity}\t{dna_sequence}\n'
             f.write(txt)
 
 
 def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
-    writer = pd.ExcelWriter(os.path.join(out_dir, 'summary_results_{0}.xlsx'.format(dt_basename)))
+    writer = pd.ExcelWriter(os.path.join(out_dir, f'summary_results_{dt_basename}.xlsx'))
     rep_list = list(res_dic.keys())
     rep_list.sort()
     data = {}
     for rep in rep_list:
-        data[rep] = '{0} [id:{1};cv:{2};dp:{3}]'.format(rep, round(float(res_dic[rep]['pc_identity'])),
-                                                        round(float(res_dic[rep]['pc_coverage'])),
-                                                        round(float(res_dic[rep]['mean_depth'])))
+        data[rep] = f'{rep} [id:{round(float(res_dic[rep]["pc_identity"]))};' \
+                    f'cv:{round(float(res_dic[rep]["pc_coverage"]))};dp:{round(float(res_dic[rep]["mean_depth"]))}]'
     df = pd.DataFrame(data, index=[sample_id])
     df.to_excel(writer, 'replicons', index=True)
     writer.save()
@@ -117,7 +114,6 @@ def pre_main(args):
     dt_base_type = args.dtbase
     wk_dir = args.wkDir
     subgroup = args.subGroup
-
     # execution main
     main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup)
 
@@ -143,13 +139,13 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     seq_file = os.path.join(out_dir, dt_basename, 'assembled_seqs.fa.gz')
 
     res_dic = load_rep_res(tsv_file, gen_file, seq_file)
-    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
+    log_message = log_message + f"Number of results: {len(res_dic)}\n"
 
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_rep_results.txt')
 
     res_dic, log_message_tmp = filter_results(res_dic, resu_file, 80, 95)
     log_message = log_message + log_message_tmp
-    log_message = log_message + "Number of parsed results: {0}\n".format(len(res_dic))
+    log_message = log_message + f"Number of parsed results: {len(res_dic)}\n"
 
     write_csv_result(res_dic, sample_id, out_dir, dt_basename)
     write_summary_result(res_dic, out_dir, dt_basename, sample_id)

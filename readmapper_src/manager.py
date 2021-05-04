@@ -42,10 +42,9 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
     subgroup = os.path.basename(bash_file).split("_")[-1].split('.')[0]
 
     name = multiprocessing.current_process().name
-    log_message = "\n*********** {0} Starting ***************\n".format(name)
+    log_message = f"\n*********** {name} Starting ***************\n"
 
-    log_message = log_message + "{0} detection in process for {1}... Take time (~1 to 5 min)\n"\
-        .format(db_type.upper(), sample_id)
+    log_message = log_message + f"{db_type.upper()} detection in process for {sample_id}... Take time (~1 to 5 min)\n"
 
     try:
         with open(bash_file, 'r') as f:
@@ -57,23 +56,20 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
                         .stdout.read()
                     log_message = log_message + process.decode("utf-8")
     except Exception as e:
-        log_message = log_message + "Exception : {0}\n".format(e)
+        log_message = log_message + f"Exception in detection: {e}\n"
 
     finally:
-        log_message = log_message + "{0} detection done.\n".format(db_type.upper())
+        log_message = log_message + f"{db_type.upper()} detection done.\n"
 
-    log_message = log_message + "{0} parsing in process for {1}.\n".format(db_type.upper(), sample_id)
+    log_message = log_message + f"{db_type.upper()} parsing in process for {sample_id}.\n"
 
     try:
-
         if db_type == "mlst":
             log_message = log_message + parse_mlst_detection.main(sample_id, sample_file, setting_file, db_type,
                                                                   wk_dir, subgroup)
-
         if db_type == "arm":
             log_message = log_message + parse_arm_detection.main(sample_id, sample_file, setting_file, db_type,
                                                                  wk_dir, db_path, subgroup)
-
         if db_type == "rep":
             log_message = log_message + parse_rep_detection.main(sample_id, sample_file, setting_file, db_type,
                                                                  wk_dir, subgroup)
@@ -83,7 +79,7 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
                                                                  wk_dir, db_path, subgroup)
 
     except Exception as e:
-        log_message = log_message + "Exception : {0}\n".format(e)
+        log_message = log_message + f"Exception in parse: {e}\n"
 
     finally:
 
@@ -107,9 +103,7 @@ def pre_main(args):
 
 def main(setting_file, wk_dir, sample_file, initial, db_path):
     sample_id_list = get_sample_id_list(sample_file)
-
     count = 0
-
     files = os.listdir(wk_dir + "/")
     call_ariba_files = []
 
@@ -119,58 +113,45 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
 
     # process ariba for each database selected
     for sample_id in sample_id_list:
-
         count += 1
-        print("Sample {0}/{1}: {2} \n".format(count, len(sample_id_list), sample_id), flush=True)
-
+        print(f"Sample {count}/{len(sample_id_list)}: {sample_id} \n", flush=True)
         jobs = []
-
         for call_ariba_file in call_ariba_files:
-
             if sample_id in call_ariba_file:
-
                 if "__calling__mlst" in call_ariba_file:
                     bash_file = os.path.join(wk_dir, call_ariba_file)
-
                     schema_mlst = call_ariba_file.split("__calling__mlst_")[1].split(".")[0]
-
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst"),
-                        name='mlst {0} schema {1}'.format(sample_id, schema_mlst)
+                        name=f'mlst {sample_id} schema {schema_mlst}'
                     )
                     jobs.append(p)
                     p.start()
-
                 if "__calling__arm" in call_ariba_file:
                     bash_file = os.path.join(wk_dir, call_ariba_file)
-
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm"),
-                        name='arm {0}'.format(sample_id)
+                        name=f'arm {sample_id}'
                     )
                     jobs.append(p)
                     p.start()
-
                 if "__calling__rep" in call_ariba_file:
                     bash_file = os.path.join(wk_dir, call_ariba_file)
-
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep"),
-                        name='rep {0}'.format(sample_id)
+                        name=f'rep {sample_id}'
                     )
                     jobs.append(p)
                     p.start()
-
                 if "__calling__vir" in call_ariba_file:
                     bash_file = os.path.join(wk_dir, call_ariba_file)
-
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir"),
-                        name='vir {0}'.format(sample_id)
+                        name=f'vir {sample_id}'
                     )
                     jobs.append(p)
                     p.start()
@@ -178,12 +159,9 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
         # wait multiple jobs
         for job in jobs:
             job.join()
-
-        print("Write a report in docx file \n", flush=True)
-
+        print("Write a report in docx file \n")
         write_docx.main(wk_dir, initial, sample_id)
-
-        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n", flush=True)
+        print("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
 
 
 def version():

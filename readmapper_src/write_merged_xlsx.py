@@ -154,11 +154,9 @@ def write_merged_rep_xls(rep_file_list, wk_dir, initial):
 
 
 def pre_main(args):
-
     wk_dir = os.path.abspath(args.workdir)
     initial = args.initial
     samplefile = args.samplefile
-
     # execution main
     main(wk_dir, initial, samplefile)
 
@@ -167,12 +165,9 @@ def main(wk_dir, initial, samplefile):
 
     if samplefile == '':
         samplefile = os.path.join(wk_dir, 'sample.csv')
-
-    print('\nData from sample file {0}'.format(samplefile))
-
+    print(f'\nData from sample file {samplefile}')
     sample_dic = read_sample_file(samplefile, sep='\t')
-    print('Number of samples: {0}\n'.format(len(sample_dic.keys())))
-
+    print(f'Number of samples: {len(sample_dic.keys())}\n')
     merged_mlst_dic = collections.OrderedDict()
     merged_arm_dic = collections.OrderedDict()
     vir_file_list = []
@@ -181,12 +176,11 @@ def main(wk_dir, initial, samplefile):
         for sample_id in sample_dic.keys():
             if data_type == 'mlst':
                 try:
-
                     st_filename_list = glob.glob(os.path.join(wk_dir, sample_id, 'mlst_report_*.tsv'))
                     st_dic = read_mlst_results_tsv_file(st_filename_list)
                 except IndexError:
                     st_dic = {}
-                    print('For {0} no MLST data found'.format(sample_id))
+                    print(f'For {sample_id} no MLST data found')
                 if st_dic:
                     for key, value in st_dic.items():
                         mlst_name = value['mlst_name']
@@ -201,7 +195,7 @@ def main(wk_dir, initial, samplefile):
                     arm_dic = read_summary_arm_results_csv_file(arm_filename, sep='\t')
                 except IndexError:
                     arm_dic = ''
-                    print('For {0} no ARM data found'.format(sample_id))
+                    print(f'For {sample_id} no ARM data found')
                 if arm_dic != '':
                     merged_arm_dic[sample_id] = arm_dic
 
@@ -210,30 +204,30 @@ def main(wk_dir, initial, samplefile):
                     vir_file_list = vir_file_list + [
                         glob.glob(os.path.join(wk_dir, sample_id, 'summary_results_virDB_*.xlsx'))[0]]
                 except IndexError:
-                    print('For {0} no VIR data found'.format(sample_id))
+                    print(f'For {sample_id} no VIR data found')
 
             elif data_type == 'rep':
                 try:
                     rep_file_list = rep_file_list + [
                         glob.glob(os.path.join(wk_dir, sample_id, 'summary_results_repDB_*.xlsx'))[0]]
                 except IndexError:
-                    print('For {0} no REP data found'.format(sample_id))
+                    print(f'For {sample_id} no REP data found')
 
     print('')
     mlst_file = write_merged_mlst_dic(merged_mlst_dic, wk_dir, initial)
     if mlst_file != '':
-        print('MLST results were written in {0}\n'.format(mlst_file))
+        print(f'MLST results were written in {mlst_file}\n')
 
     arm_file = write_merged_arm_dic(merged_arm_dic, merged_mlst_dic, sample_dic, wk_dir, initial)
-    print('ARM results were written in {0}\n'.format(arm_file))
+    print(f'ARM results were written in {arm_file}\n')
 
     if rep_file_list:
         rep_file = write_merged_rep_xls(rep_file_list, wk_dir, initial)
-        print('REP results were written in {0}\n'.format(rep_file))
+        print(f'REP results were written in {rep_file}\n')
 
     if vir_file_list:
         vir_file = write_merged_vir_xls(vir_file_list, wk_dir, initial)
-        print('VIR results were written in {0}\n'.format(vir_file))
+        print(f'VIR results were written in {vir_file}\n')
 
 
 def version():

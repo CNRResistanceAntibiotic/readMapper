@@ -11,11 +11,8 @@ import pandas as pd
 
 
 def load_vir_res(tsv_file, gen_file, seq_file):
-
     log_message = ""
-
-    log_message = log_message + "{0}\n{1}\n{2}\n".format(tsv_file, gen_file, seq_file)
-
+    log_message = log_message + f"{tsv_file}\n{gen_file}\n{seq_file}\n"
     if os.path.exists(gen_file):
         gen_file = gunzip_file(gen_file)
     else:
@@ -56,17 +53,17 @@ def load_vir_res(tsv_file, gen_file, seq_file):
                             prot_rec = '.'
                             break
                 if found == '0':
-                    log_message = log_message + "Not found:{0}\n".format(dt_dic['ctg'])
-                    log_message = log_message + "{0}\n".format(dt_dic)
+                    log_message = log_message + f"Not found:{dt_dic['ctg']}\n"
+                    log_message = log_message + f"{dt_dic}\n"
 
                 ref_len = float(dt_dic['ref_len'])
                 ref_base_assembled = int(dt_dic['ref_base_assembled'])
                 cov = (ref_base_assembled / ref_len) * 100
-                dt_dic['pc_coverage'] = '{0}'.format(round(cov, 2))
+                dt_dic['pc_coverage'] = f'{round(cov, 2)}'
 
                 ref_nt = dt_dic['ref_nt']
                 ctg_nt = dt_dic['ctg_nt']
-                nucleotide_change = '{0}->{1}'.format(ref_nt, ctg_nt)
+                nucleotide_change = f'{ref_nt}->{ctg_nt}'
                 if nucleotide_change == '.->.':
                     nucleotide_change = '.'
                 smtls_nts = dt_dic['smtls_nts']
@@ -161,19 +158,19 @@ def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
 
         if ',' not in nt:
             # p_depth = int(depth) / float(total_depth)
-            txt = txt + '|{0}[{1}/{2}]'.format(nt, depth, total_depth)
+            txt = txt + f'|{nt}[{depth}/{total_depth}]'
         else:
             for j in range(0, len(nt.split(','))):
                 n = nt.split(',')[j]
                 d = depth.split(',')[j]
                 # p_depth = int(d) / float(total_depth)
                 if j == 0:
-                    txt = txt + '|{0}[{1}/{2}]'.format(n, d, total_depth)
+                    txt = txt + f'|{n}[{d}/{total_depth}]'
                 else:
-                    txt = txt + ',{0}[{1}/{2}]'.format(n, d, total_depth)
+                    txt = txt + f',{n}[{d}/{total_depth}]'
     txt = txt[1:]
 
-    txt = '{0}->{1} {2}'.format(ref_nt, ctg_nt, txt)
+    txt = f'{ref_nt}->{ctg_nt} {txt}'
     if txt == '.->. .[./.]':
         txt = '.'
 
@@ -192,33 +189,29 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
             # filter target coverage < pass_cov
             if float(res_dic[key]['pc_coverage']) < pass_cov:
                 del_keys.append(key)
-                f.write('Filter pc_coverage < {0}\n:'.format(pass_cov))
-                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+                f.write(f'Filter pc_coverage < {pass_cov}\n:')
+                f.write(f'{key}\n{res_dic[key]}\n\n')
 
                 # Alarm with id >= 90 and pass_id > 40
                 if float(res_dic[key]['pc_identity']) >= pass_id and float(res_dic[key]['pc_coverage']) > 50:
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
-                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
-                                res_dic[key]['mean_depth'])
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             # filter id percentage < pass_id
             if float(res_dic[key]['pc_identity']) < pass_id:
                 del_keys.append(key)
-                f.write('Filter pc_identity < {0}\n:'.format(pass_id))
-                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+                f.write(f'Filter pc_identity < {pass_id}\n:')
+                f.write(f'{key}\n{res_dic[key]}\n\n')
 
                 # Alarm if id >= 40 and cov >=75
                 if float(res_dic[key]['pc_identity']) >= 40 and float(res_dic[key]['pc_coverage']) >= 80:
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
-                        .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
-                                res_dic[key]['mean_depth'])
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= pass_id \
@@ -226,9 +219,7 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                 log_message = log_message + "\n####################################################################\n"
                 log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
                 log_message = log_message + "####################################################################\n"
-                log_message = log_message + "\nRecord: {0}\tCoverage:{1}\tIdentity:{2}\tMean depth:{3}\n" \
-                    .format(key, res_dic[key]['pc_coverage'], res_dic[key]['pc_identity'],
-                            res_dic[key]['mean_depth'])
+                log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
                 log_message = log_message + "\nThe record will be kept in the final results\n"
 
             # filter
@@ -236,7 +227,7 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                 # filter SNP detection in wrong taxonomy
                 del_keys = taxon_snp(del_keys, key, species)
                 f.write('Filter wrong taxonomy\n:')
-                f.write('{0}\n{1}\n\n'.format(key, res_dic[key]))
+                f.write(f'{key}\n{res_dic[key]}\n\n')
                 # filter SNP search with no SNP
                 del_no_muts, del_keys = no_change(del_no_muts, del_keys, res_dic, key)
 
@@ -246,7 +237,7 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
         # Deletion SNP in records
         for key, n in del_n_muts:
             f.write('Filter nts SNP if not searched\n:')
-            f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
+            f.write(f'{key}\n{res_dic[key]}\n{res_dic[key]["mutations"][n]}\n\n')
             del res_dic[key]['mutations'][n]
 
         for key, n in del_no_muts:
@@ -254,9 +245,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                 del res_dic[key]['mutations'][n]
                 if key != '':
                     f.write('Filter SNP search with no SNP\n:')
-                    f.write('{0}\n{1}\n{2}\n\n'.format(key, res_dic[key], res_dic[key]['mutations'][n]))
+                    f.write(f'{key}\n{res_dic[key]}\n{res_dic[key]["mutations"][n]}\n\n')
             except Exception as e:
-                log_message = log_message + "Warning: Problem to deletion SNP. {0}".format(e)
+                log_message = log_message + f"Warning: Problem to deletion SNP. {e}"
 
     # Deletion of records
     for key in list(set(del_keys)):
@@ -314,27 +305,20 @@ def taxon_snp(del_keys, key, species, sep=','):
 
 def check_allele(res_dic, dt_base_file):
     vir_dic, log_message = load_vir_arm_db(dt_base_file)
-
-    perfect_nucl_match = 0
-    perfect_prot_match = 0
-
+    perfect_nucl_match = perfect_prot_match = 0
     # explore each gene result of ariba
     for res_key in res_dic.keys():
         vir_key_1 = res_key.split('__')[0]
         data = res_dic[res_key]
-
         res_seq_nucl = str(data['dna_sequence'].seq)
         vir_seq_nucl = str(vir_dic[vir_key_1]['dna_sequence'])
-
         # test if the ariba result matches perfectly with an existing nucl sequence in database
         if res_seq_nucl == vir_seq_nucl:
             perfect_nucl_match += 1
             res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
             continue
-
         # lot of case where the truly result is the translated prot sequence against the nucl sequence in database
         else:
-
             found = True
             # case of gene coding (cds) in ariba result
             if data['gene'] == '1':
@@ -356,7 +340,6 @@ def check_allele(res_dic, dt_base_file):
                             found = False
                             res_dic = update_res(res_dic, res_key, vir_dic, vir_key_2)
                             break
-
                 # if any match founded. the ariba result will be conserved
                 if found:
                     res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
@@ -372,13 +355,14 @@ def check_allele(res_dic, dt_base_file):
                 if found:
                     res_dic = add_res(res_dic, res_key, vir_dic, vir_key_1)
 
-    log_message = log_message + "Number of results: {0}\n".format(len(res_dic))
-    log_message = log_message + "Number of perfect nucleotide match of ariba result to {0} database: {1} - {2}% of " \
-                                "total results\n" \
-        .format(os.path.basename(dt_base_file), perfect_nucl_match, round((perfect_nucl_match / len(res_dic) * 100), 2))
-    log_message = log_message + "Number of perfect protein match of ariba result to {0} database: {1} - {2}% of total" \
-                                " results\n" \
-        .format(os.path.basename(dt_base_file), perfect_prot_match, round((perfect_prot_match / len(res_dic) * 100), 2))
+    log_message = log_message + f"Number of results: {len(res_dic)}\n"
+    if res_dic:
+        log_message = log_message + f"Number of perfect nucleotide match of ariba result to" \
+                                    f" {os.path.basename(dt_base_file)} database: {perfect_nucl_match} -" \
+                                    f" {round((perfect_nucl_match / len(res_dic) * 100), 2)}% of total results\n"
+        log_message = log_message + f"Number of perfect protein match of ariba result to {os.path.basename(dt_base_file)}" \
+                                    f" database: {perfect_prot_match} -" \
+                                    f" {round((perfect_prot_match / len(res_dic) * 100), 2)}% of total results\n"
 
     return res_dic, log_message
 
@@ -465,10 +449,10 @@ def write_csv_result(res_dic, out_dir, dt_basename):
     df.sort_values(by=['pc_coverage', 'pc_identity', 'keyDB', 'designation', 'known_change', 'unknown_change'],
                    ascending=[False, False, True, True, False, False], inplace=True)
 
-    writer = pd.ExcelWriter(os.path.join(out_dir, 'results_{0}.xlsx'.format(dt_basename)))
+    writer = pd.ExcelWriter(os.path.join(out_dir, f'results_{dt_basename}.xlsx'))
     df.to_excel(writer, 'sheet1', index=False)
     writer.save()
-    df.to_csv(os.path.join(out_dir, 'results_{0}.tsv'.format(dt_basename)), sep='\t', index=False)
+    df.to_csv(os.path.join(out_dir, f'results_{dt_basename}.tsv'), sep='\t', index=False)
 
 
 def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
@@ -479,24 +463,20 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
     keys = list(res_dic.keys())
     keys.sort()
     for key in keys:
-        sequence_id = '{0}__ctg_X__{1}_locusX__{2}__{3}'.format(
-            sample_id, sample_id, res_dic[key]['designation'], res_dic[key]['keyDB'])
-        description = 'func:{0},mechanism:{1},id:{2},cov:{3},dep:{4}'.format(res_dic[key]['ATB_groups'],
-                                                                             res_dic[key]['mechanism_groups'],
-                                                                             res_dic[key]['pc_identity'],
-                                                                             res_dic[key]['pc_coverage'],
-                                                                             res_dic[key]['mean_depth'])
+        sequence_id = f'{sample_id}__ctg_X__{sample_id}_locusX__{res_dic[key]["designation"]}__{res_dic[key]["keyDB"]}'
+        description = f'func:{res_dic[key]["ATB_groups"]},mechanism:{res_dic[key]["mechanism_groups"]},' \
+                      f'id:{res_dic[key]["pc_identity"]},cov:{res_dic[key]["pc_coverage"]},' \
+                      f'dep:{res_dic[key]["mean_depth"]}'
 
-        col_name = '{0}::{1}::{2}'.format(res_dic[key]['ATB_groups'], res_dic[key]['designation'],
-                                          res_dic[key]['keyDB'])
+        col_name = f'{res_dic[key]["ATB_groups"]}::{res_dic[key]["designation"]}::{res_dic[key]["keyDB"]}'
 
         val_name = ''
         if 'Warning_HET' in res_dic[key].keys():
             val_name = res_dic[key]['Warning_HET'] + ','
         if 'Warning_COV' in res_dic[key].keys():
             val_name = res_dic[key]['Warning_COV'] + ','
-        val_name = val_name + 'id:{0},cov:{1},dep:{2}'.format(
-            res_dic[key]['pc_identity'], res_dic[key]['pc_coverage'], res_dic[key]['mean_depth'])
+        val_name = val_name + f'id:{res_dic[key]["pc_identity"]},cov:{res_dic[key]["pc_coverage"]},' \
+                              f'dep:{res_dic[key]["mean_depth"]}'
 
         snp, sub = {}, {}
         if res_dic[key]['var_only'] == '1':
@@ -522,7 +502,7 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
         snp_txt = ''
         if snp != {}:
             for key3 in snp.keys():
-                snp_txt = snp_txt + ',snp:{0}[{1}]'.format('|'.join(snp[key3]), key3)
+                snp_txt = snp_txt + f',snp:{"|".join(snp[key3])}[{key3}]'
             description = description + snp_txt
             val_name = val_name + snp_txt
 
@@ -532,7 +512,7 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
         sub_txt = ''
         if sub != {}:
             for key3 in sub.keys():
-                sub_txt = sub_txt + ',sub:{0}[{1}]'.format('|'.join(sub[key3]), key3)
+                sub_txt = sub_txt + f',sub:{"|".join(sub[key3])}[{key3}]'
             description = description + sub_txt
             val_name = val_name + sub_txt
 
@@ -555,12 +535,12 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
                                           description=description)
                 prot_records.append(prot_sequence)
 
-    SeqIO.write(dna_records, open(os.path.join(out_dir, 'results_{0}.fna'.format(dt_basename)), 'w'), 'fasta')
-    SeqIO.write(prot_records, open(os.path.join(out_dir, 'results_{0}.faa'.format(dt_basename)), 'w'), 'fasta')
+    SeqIO.write(dna_records, open(os.path.join(out_dir, f'results_{dt_basename}.fna'), 'w'), 'fasta')
+    SeqIO.write(prot_records, open(os.path.join(out_dir, f'results_{dt_basename}.faa'), 'w'), 'fasta')
 
     df = pd.DataFrame(csv_dic, index=[sample_id, ])
     df.sort_index(axis=1, inplace=True)
-    df.to_csv(os.path.join(out_dir, 'summary_results_{0}.csv'.format(dt_basename)), sep='\t', index=False)
+    df.to_csv(os.path.join(out_dir, f'summary_results_{dt_basename}.csv'), sep='\t', index=False)
 
     for key in csv_dic.keys():
         keys = key.split('::')
@@ -571,7 +551,7 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
 
     sheet_names = list(xls_dic.keys())
     sheet_names.sort()
-    writer = pd.ExcelWriter(os.path.join(out_dir, 'summary_results_{0}.xlsx'.format(dt_basename)))
+    writer = pd.ExcelWriter(os.path.join(out_dir, f'summary_results_{dt_basename}.xlsx'))
     for n, sheet_name in enumerate(sheet_names):
         df = pd.DataFrame(xls_dic[sheet_name], index=[sample_id, ])
         df.sort_index(axis=1, inplace=True)
@@ -594,28 +574,31 @@ def pre_main(args):
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
     log_message = ""
-
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
         wk_dir = os.path.dirname(sample_file)
     out_dir = os.path.join(wk_dir, sample_id)
-
     set_dic = read_setting_file(setting_file)
-
     sample_dic, sample_list = read_sample_file(sample_file)
-
     species = sample_dic[sample_id]
-    set_species = set_dic[species.lower()]
-
-    dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
-    dt_basename = '{0}_ariba_{1}_{2}'.format(dt_basename_pre_split[0], dt_basename_pre_split[1], subgroup)
-    dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "{0}_{1}".format(*set_species[dt_base_type], subgroup) + '.tsv')
+    dt_basename = dt_base_file = ""
+    if species.lower() in set_dic:
+        set_species = set_dic[species.lower()]
+        dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
+        dt_basename = f'{dt_basename_pre_split[0]}_ariba_{dt_basename_pre_split[1]}_{subgroup}'
+        dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "{0}_{1}.tsv".format(*set_species[dt_base_type], subgroup))
+    else:
+        # if no set its "all"
+        for file in os.listdir(out_dir):
+            if "virDB_ariba" in file:
+                dt_basename = file
+                dt_basename_split = dt_basename.split("_")
+        dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "virDB_{0}_all.tsv".format(dt_basename_split[2]))
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')
     seq_file = os.path.join(out_dir, dt_basename, 'assembled_seqs.fa.gz')
-
     resu_file = os.path.join(out_dir, dt_basename, 'filtered_out_results.txt')
 
     res_dic = load_vir_res(tsv_file, gen_file, seq_file)
