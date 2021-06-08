@@ -40,7 +40,7 @@ def read_summary_arm_results_csv_file(filename, sep='\t'):
 
         return atbDic
     else:
-        print('\nNo armDB result file {0}\n'.format(filename))
+        print(f'\nNo armDB result file {filename}\n')
         exit(1)
 
 
@@ -56,7 +56,7 @@ def read_mlst_results_tsv_file(filename_list):
                     data_dic[row["mlst_name"]] = row
 
         else:
-            print('\nNo MLST result file {0}\n'.format(filename_list))
+            print(f'\nNo MLST result file {filename_list}\n')
     return data_dic
 
 
@@ -71,7 +71,7 @@ def read_species(sample_file, sample_id, sep='\t'):
                     break
         return species
     else:
-        print('\nNo sample file {0}\n'.format(sample_file))
+        print(f'\nNo sample file {sample_file}\n')
         exit(1)
 
 
@@ -101,7 +101,7 @@ def write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initia
                 res = res.replace('_', ' ')
                 if snp != '' and snp != 'None':
                     snp1 = 'variant résistant de '
-                    snp2 = '{0} ({1})'.format(res.strip().split(' ')[0], snp)
+                    snp2 = f'{res.strip().split(" ")[0]} ({snp})'
                     res = snp1 + snp2
                 elif snp == 'None':
                     res = ''
@@ -148,22 +148,20 @@ def write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initia
     met_p1.add_run('des séquences génomiques : Ariba, Bowtie2, CD-HIT, MUMmer et Samtools\n\n')
 
     arm_db_name_split = arm_db_name.split('_')
-    met_p1.add_run('   ~ Bases de données du CNR de la résistance aux antibiotiques : {0} ver.: {1} cat.: {2}\n'
-                   .format(arm_db_name_split[0], arm_db_name_split[2], arm_db_name_split[3]))
+    met_p1.add_run(f'   ~ Bases de données du CNR de la résistance aux antibiotiques : {arm_db_name_split[0]}'
+                   f' ver.: {arm_db_name_split[2]} cat.: {arm_db_name_split[3]}\n')
 
     if st_hash:
         document.add_heading('Résultat : Génotypage MLST ', 3)
         for schema, st in st_hash.items():
-            document.add_paragraph('   ~ Sequence Type: ST-{0}. For schema: {1}\n'.format(st, schema))
+            document.add_paragraph(f'   ~ Sequence Type: ST-{st}. For schema: {schema}\n')
 
     document.add_heading(
         'Résultat : Déterminants de la résistance aux 3 principales familles d\'antibiotiques (*)', 3)
 
-    fr_dict = {'Aminoglycoside': "Aminosides", 'Beta-lactam': "Beta-lactamines",
-               'Quinolone': "Quinolones", 'Colistin': "Colistine",
-               'Sulfonamide': "Sulfamides", 'Trimethoprime': "Triméthoprime",
-               'Cycline': "Tétracycline",
-               'Aminoglycoside|Fluoroquinolone': "Aminosides et fluoroquinolones"}
+    fr_dict = {'Aminoglycoside': "Aminosides", 'Beta-lactam': "Beta-lactamines", 'Quinolone': "Quinolones",
+               'Colistin': "Colistine", 'Sulfonamide': "Sulfamides", 'Trimethoprime': "Triméthoprime",
+               'Cycline': "Tétracycline", 'Aminoglycoside|Fluoroquinolone': "Aminosides et fluoroquinolones"}
     f_results = ['Aminoglycoside', 'Aminoglycoside|Fluoroquinolone', 'Beta-lactam', 'Quinolone', 'Colistin']
     # ,Sulfonamide','Trimethoprime','Cycline',]
 
@@ -172,20 +170,18 @@ def write_docx(wk_dir, sample_id, species, st_hash, amr_dic, arm_db_name, initia
         try:
             res = f_res_dict[func]
             res.sort()
-            res_txt = res_txt + '   ~ {0} : {1}\n'.format(fr_dict[func], ', '.join(res))
+            res_txt = res_txt + f'   ~ {fr_dict[func]} : {", ".join(res)}\n'
             # document.add_paragraph(res_txt)
         except KeyError:
-            res_txt = res_txt + '   ~ {0} :\n'.format(fr_dict[func])
+            res_txt = res_txt + f'   ~ {fr_dict[func]} :\n'
         document.add_paragraph(res_txt)
         # res_txt = ''
 
-    document.add_paragraph(
-        '(*) Contacter le CNR pour d\'autres familles d\'antibiotiques (tél: 04 73 754 920)')
-    outfile = os.path.join(os.path.dirname(wk_dir),
-                           'CR_CNR_{0}_{1}_{2}.docx'.format(sample_id, datetime.date.today(), initial))
+    document.add_paragraph('(*) Contacter le CNR pour d\'autres familles d\'antibiotiques (tél: 04 73 754 920)')
+    outfile = os.path.join(os.path.dirname(wk_dir), f'CR_CNR_{sample_id}_{datetime.date.today()}_{initial}.docx')
     document.save(outfile)
 
-    print('The main results are summarized in file {0}'.format(outfile))
+    print(f'The main results are summarized in file {outfile}')
 
 
 def pre_main(args):
@@ -202,18 +198,18 @@ def main(wk_dir, initial, sample_id):
     sample_id = os.path.basename(wk_dir)
     sample_file = os.path.join(wk_dir, 'sample.csv')
     species = read_species(sample_file, sample_id, sep='\t')
+    st_hash = {}
     try:
         st_filename_list = glob.glob(os.path.join(wk_dir, 'mlst_report_*.tsv'))
         st_dic = read_mlst_results_tsv_file(st_filename_list)
-        st_hash = {}
         for key, value in st_dic.items():
             count_gene = 1
             for col in value:
                 if "gene" in col:
-                    count_gene = count_gene +1
+                    count_gene += 1
             schema = key
             for count in range(1, count_gene):
-                schema = schema + "-" + value["gene{0}".format(count)]
+                schema = schema + "-" + value[f"gene{count}"]
             st_hash[schema] = value["ST"]
     except IndexError:
         st_list = ''

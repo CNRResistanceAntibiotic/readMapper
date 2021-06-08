@@ -194,7 +194,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                                f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                                f"Mean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             # filter id percentage < pass_id
@@ -208,7 +210,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                                f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                                f"Mean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= pass_id \
@@ -216,7 +220,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                 log_message = log_message + "\n####################################################################\n"
                 log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
                 log_message = log_message + "####################################################################\n"
-                log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                            f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                            f"Mean depth:{res_dic[key]['mean_depth']}\n"
                 log_message = log_message + "\nThe record will be kept in the final results\n"
 
             # filter
@@ -593,9 +599,10 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
                                     '{0}_{1}.tsv'.format(*set_species[dt_base_type], subgroup))
     else:
         # if no set its "all"
+        dt_basename_split = []
         for file in os.listdir(out_dir):
-            if "armDB_ariba" in file:
-                dt_basename = file
+            if "armDB_ariba" in str(file):
+                dt_basename = str(file)
                 dt_basename_split = dt_basename.split("_")
         dt_base_file = os.path.join(db_path, "dbARM", "subsets", "armDB_{0}_all.tsv".format(dt_basename_split[2]))
 

@@ -27,9 +27,7 @@ def load_vir_res(tsv_file, gen_file, seq_file):
 
     res_dic = {}
     with open(tsv_file) as f:
-        header = ""
-        prot_rec = ""
-        dna_rec = ""
+        header = prot_rec = dna_rec = ""
         for n, line in enumerate(f):
             if n == 0:
                 header = line.strip().split('\t')
@@ -37,7 +35,6 @@ def load_vir_res(tsv_file, gen_file, seq_file):
                 dt_dic = dict(zip(header, line[:-1].split('\t')))
                 ref_name = dt_dic['ref_name']
                 # gene = dtDic['gene']  # 1 gene 0 non-coding
-
                 found = '0'
                 for key in gen_dic.keys():
                     if dt_dic['ctg'] in key:
@@ -197,7 +194,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low coverage alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                                f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                                f"Mean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             # filter id percentage < pass_id
@@ -211,7 +210,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                     log_message = log_message + "\n############################################################\n"
                     log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: Low identity alert  ###\n"
                     log_message = log_message + "############################################################\n"
-                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                    log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                                f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                                f"Mean depth:{res_dic[key]['mean_depth']}\n"
                     log_message = log_message + "\nThe record will be deleted in the final results\n"
 
             if float(res_dic[key]['mean_depth']) <= 15 and float(res_dic[key]['pc_identity']) >= pass_id \
@@ -219,7 +220,9 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                 log_message = log_message + "\n####################################################################\n"
                 log_message = log_message + "###  WARNING PUTATIVE MIS-DETECTION: < 15 sequencing depth alert  ###\n"
                 log_message = log_message + "####################################################################\n"
-                log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\tIdentity:{res_dic[key]['pc_identity']}\tMean depth:{res_dic[key]['mean_depth']}\n"
+                log_message = log_message + f"\nRecord: {key}\tCoverage:{res_dic[key]['pc_coverage']}\t" \
+                                            f"Identity:{res_dic[key]['pc_identity']}\t" \
+                                            f"Mean depth:{res_dic[key]['mean_depth']}\n"
                 log_message = log_message + "\nThe record will be kept in the final results\n"
 
             # filter
@@ -360,8 +363,8 @@ def check_allele(res_dic, dt_base_file):
         log_message = log_message + f"Number of perfect nucleotide match of ariba result to" \
                                     f" {os.path.basename(dt_base_file)} database: {perfect_nucl_match} -" \
                                     f" {round((perfect_nucl_match / len(res_dic) * 100), 2)}% of total results\n"
-        log_message = log_message + f"Number of perfect protein match of ariba result to {os.path.basename(dt_base_file)}" \
-                                    f" database: {perfect_prot_match} -" \
+        log_message = log_message + f"Number of perfect protein match of ariba result to" \
+                                    f" {os.path.basename(dt_base_file)} database: {perfect_prot_match} -" \
                                     f" {round((perfect_prot_match / len(res_dic) * 100), 2)}% of total results\n"
 
     return res_dic, log_message
@@ -372,8 +375,8 @@ def add_res(res_dic, res_key, vir_dic, vir_key):
     res_dic[res_key]['keyDB'] = vir_key
     res_dic[res_key]['comment'] = vir_dic[vir_key]['comment']
     res_dic[res_key]['alternative_designation'] = vir_dic[vir_key]['alternative_names']
-    res_dic[res_key]['searched_dna_changes'] = vir_dic[vir_key]['dna_snp']
-    res_dic[res_key]['searched_prot_changes'] = vir_dic[vir_key]['prot_snp']
+    res_dic[res_key]['searched_dna_changes'] = '.'
+    res_dic[res_key]['searched_prot_changes'] = '.'
     res_dic[res_key]['ATB_groups'] = vir_dic[vir_key]['antibiotic_family']
     res_dic[res_key]['mechanism_groups'] = vir_dic[vir_key]['mechanism_names']
     return res_dic
@@ -384,8 +387,8 @@ def update_res(res_dic, res_key, vir_dic, vir_key):
     res_dic[res_key]['keyDB'] = vir_key
     res_dic[res_key]['comment'] = vir_dic[vir_key]['comment']
     res_dic[res_key]['alternative_designation'] = vir_dic[vir_key]['alternative_names']
-    res_dic[res_key]['searched_dna_changes'] = vir_dic[vir_key]['dna_snp']
-    res_dic[res_key]['searched_prot_changes'] = vir_dic[vir_key]['prot_snp']
+    res_dic[res_key]['searched_dna_changes'] = '.'
+    res_dic[res_key]['searched_prot_changes'] = '.'
     res_dic[res_key]['ATB_groups'] = vir_dic[vir_key]['antibiotic_family']
     res_dic[res_key]['mechanism_groups'] = vir_dic[vir_key]['mechanism_names']
     res_dic[res_key]['pc_identity'] = '100.00'
@@ -419,11 +422,9 @@ def write_csv_result(res_dic, out_dir, dt_basename):
             n += 1
 
     arrays_items = ['keyDB', 'designation', 'pc_identity', 'pc_coverage', 'mean_depth', 'variant_seq_type',
-                    'known_change', 'unknown_change',
-                    'nucleotide_change', 'detected_nucleotide', 'depth_by_detected_nucleotide',
-                    'ATB_groups', 'mechanism_groups',
-                    'alternative_designation', 'searched_prot_changes', 'searched_dna_changes', 'comment',
-                    'dna_sequence', 'prot_sequence']
+                    'known_change', 'unknown_change', 'nucleotide_change', 'detected_nucleotide',
+                    'depth_by_detected_nucleotide', 'ATB_groups', 'mechanism_groups', 'alternative_designation',
+                    'searched_prot_changes', 'searched_dna_changes', 'comment', 'dna_sequence', 'prot_sequence']
     res_list = []
     sort_list = list(nw_res_dict.keys())
     sort_list.sort()
@@ -587,12 +588,14 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
         set_species = set_dic[species.lower()]
         dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
         dt_basename = f'{dt_basename_pre_split[0]}_ariba_{dt_basename_pre_split[1]}_{subgroup}'
-        dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "{0}_{1}.tsv".format(*set_species[dt_base_type], subgroup))
+        dt_base_file = os.path.join(db_path, "dbVIR", "subsets",
+                                    "{0}_{1}.tsv".format(*set_species[dt_base_type], subgroup))
     else:
         # if no set its "all"
+        dt_basename_split = []
         for file in os.listdir(out_dir):
-            if "virDB_ariba" in file:
-                dt_basename = file
+            if "virDB_ariba" in str(file):
+                dt_basename = str(file)
                 dt_basename_split = dt_basename.split("_")
         dt_base_file = os.path.join(db_path, "dbVIR", "subsets", "virDB_{0}_all.tsv".format(dt_basename_split[2]))
 
