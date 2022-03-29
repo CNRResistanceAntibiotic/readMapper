@@ -178,6 +178,7 @@ def main(setting_file, wk_dir, reads_dir, sample_file, force, initial, subset_ar
                             # get user selected subsets
                             if subset_arm_list:
                                 db_subset_list = subset_arm_list
+                                db_name = db_name_tmp
                             for subset in db_subset_list:
                                 if subset == 'all':
                                     subsets_name = 'all'
