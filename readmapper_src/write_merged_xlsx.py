@@ -132,7 +132,7 @@ def write_merged_vir_xls(vir_file_list, wk_dir, initial):
         for vir_file in vir_file_list:
             xl = pd.ExcelFile(vir_file)
             if VF in xl.sheet_names:
-                df = df.concat(xl.parse(VF))
+                df = df.append(xl.parse(VF))
         df.to_excel(writer, VF, index=False, index_label='sample_id')
     writer.save()
 
@@ -146,7 +146,7 @@ def write_merged_rep_xls(rep_file_list, wk_dir, initial):
     df = pd.DataFrame()
     for rep_file in rep_file_list:
         xl = pd.ExcelFile(rep_file)
-        df = df.concat(xl.parse('replicons'))
+        df = df.append(xl.parse('replicons'))
     df.to_excel(writer, 'replicons', index=True, index_label='sample_id')
     writer.save()
 
