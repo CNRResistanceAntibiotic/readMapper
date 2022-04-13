@@ -250,7 +250,7 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
                     f.write('Filter SNP search with no SNP\n:')
                     f.write(f'{key}\n{res_dic[key]}\n{res_dic[key]["mutations"][n]}\n\n')
             except Exception as e:
-                log_message = log_message + f"Warning: Problem to deletion SNP. {e}"
+                log_message = log_message + f"VIR : Warning: Problem to deletion SNP. {e}"
 
     # Deletion of records
     for key in list(set(del_keys)):

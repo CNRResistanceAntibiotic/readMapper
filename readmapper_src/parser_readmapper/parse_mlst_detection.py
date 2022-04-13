@@ -23,13 +23,11 @@ def load_mlst_res(mlst_file, res_dic, sep='\t'):
 
 
 def write_csv_result(res_dic, out_dir, subgroup):
-
     mlst_name = res_dic['mlst_name']
     df = pd.DataFrame(res_dic, index=[res_dic['sample_id'], ])
-    writer = pd.ExcelWriter(os.path.join(out_dir, 'mlst_report_{}.xlsx'.format(subgroup)))
+    writer = pd.ExcelWriter(os.path.join(out_dir, f'mlst_report_{subgroup}.xlsx'))
     df.to_excel(writer, mlst_name, index=False)
     writer.save()
-
     df.to_csv(os.path.join(out_dir, f'mlst_report_{subgroup}.tsv'), sep='\t', index=False)
 
 

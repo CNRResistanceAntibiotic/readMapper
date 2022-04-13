@@ -176,13 +176,9 @@ def parse_nt_info(ref_nt, ctg_nt, smtls_nts, smtls_nts_depth, smtls_total_depth)
 
 def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
     log_message = ""
-
     with open(resu_file, 'a') as f:
-        del_keys = []
-        del_n_muts = []
-        del_no_muts = []
+        del_keys, del_n_muts, del_no_muts = [], [], []
         for key in res_dic.keys():
-
             # filter target coverage < pass_cov
             if float(res_dic[key]['pc_coverage']) < pass_cov:
                 del_keys.append(key)
@@ -237,20 +233,23 @@ def filter_results(res_dic, species, resu_file, pass_cov=80, pass_id=80):
             # filter nts SNP if not searched
             del_n_muts = unknown_synonymous(del_n_muts, res_dic, key)
 
-        # Deletion SNP in records
+        # Deletion synonymous SNP in records
         for key, n in del_n_muts:
             f.write('Filter nts SNP if not searched\n:')
             f.write(f'{key}\n{res_dic[key]}\n{res_dic[key]["mutations"][n]}\n\n')
             del res_dic[key]['mutations'][n]
-
+            # remove SNP in the second hash filter to avoid conflict (supress an already supressed SNP)
+            if [key, n] in del_no_muts:
+                del_no_muts.remove([key, n])
+        # remove SNP of wrong species
         for key, n in del_no_muts:
             try:
-                del res_dic[key]['mutations'][n]
                 if key != '':
                     f.write('Filter SNP search with no SNP\n:')
                     f.write(f'{key}\n{res_dic[key]}\n{res_dic[key]["mutations"][n]}\n\n')
+                    del res_dic[key]['mutations'][n]
             except Exception as e:
-                log_message = log_message + f"Warning: Problem to deletion SNP. {e}"
+                log_message = log_message + f"ARM : Warning: Problem to deletion SNP. {e}\n"
 
     # Deletion of records
     for key in list(set(del_keys)):
@@ -410,19 +409,19 @@ def update_res(res_dic, res_key, arm_dic, arm_key):
 
 
 def write_csv_result(res_dic, out_dir, dt_basename):
-    nw_res_Dic = {}
+    nw_res_dic = {}
     n = 0
     for key in res_dic.keys():
         for key1 in res_dic[key]['mutations'].keys():
-            nw_res_Dic[n] = {}
+            nw_res_dic[n] = {}
             for key2 in res_dic[key]['mutations'][key1].keys():
-                nw_res_Dic[n][key2] = res_dic[key]['mutations'][key1][key2]
+                nw_res_dic[n][key2] = res_dic[key]['mutations'][key1][key2]
             for key3 in res_dic[key].keys():
                 if key3 != 'mutations':
                     if key3 == 'dna_sequence':
-                        nw_res_Dic[n][key3] = str(res_dic[key][key3].seq)
+                        nw_res_dic[n][key3] = str(res_dic[key][key3].seq)
                     else:
-                        nw_res_Dic[n][key3] = res_dic[key][key3]
+                        nw_res_dic[n][key3] = res_dic[key][key3]
             n += 1
 
     arrays_items = ['keyDB', 'designation', 'pc_identity', 'pc_coverage', 'mean_depth', 'variant_seq_type',
@@ -432,24 +431,24 @@ def write_csv_result(res_dic, out_dir, dt_basename):
                     'alternative_designation', 'searched_prot_changes', 'searched_dna_changes', 'comment',
                     'dna_sequence', 'prot_sequence']
     res_list = []
-    sort_list = list(nw_res_Dic.keys())
+    sort_list = list(nw_res_dic.keys())
     sort_list.sort()
     for i in sort_list:
         line_list = []
         for item in arrays_items:
             if item in ['pc_identity', 'pc_coverage']:
-                line_list.append(float(nw_res_Dic[i][item]))
+                line_list.append(float(nw_res_dic[i][item]))
             else:
                 if item == 'designation':
                     txt = ''
-                    if 'Warning_HET' in nw_res_Dic[i].keys():
-                        txt = nw_res_Dic[i]['Warning_HET'] + ','
-                    if 'Warning_COV' in nw_res_Dic[i].keys():
-                        txt = txt + nw_res_Dic[i]['Warning_COV'] + ','
-                    txt = txt + nw_res_Dic[i][item]
+                    if 'Warning_HET' in nw_res_dic[i].keys():
+                        txt = nw_res_dic[i]['Warning_HET'] + ','
+                    if 'Warning_COV' in nw_res_dic[i].keys():
+                        txt = txt + nw_res_dic[i]['Warning_COV'] + ','
+                    txt = txt + nw_res_dic[i][item]
                     line_list.append(txt)
                 else:
-                    line_list.append(nw_res_Dic[i][item])
+                    line_list.append(nw_res_dic[i][item])
         res_list.append(line_list)
 
     df = pd.DataFrame.from_records(res_list, columns=arrays_items)
@@ -464,13 +463,13 @@ def write_csv_result(res_dic, out_dir, dt_basename):
 
 def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
     csv_dic = {}
-    xlsDic = {}
-    dnaRecords = []
-    protRecords = []
+    xls_dic = {}
+    dna_records = []
+    prot_records = []
     keys = list(res_dic.keys())
     keys.sort()
     for key in keys:
-        sequence_ID = f'{sample_id}__ctg_X__{sample_id}_locusX__{res_dic[key]["designation"]}__{res_dic[key]["keyDB"]}'
+        sequence_id = f'{sample_id}__ctg_X__{sample_id}_locusX__{res_dic[key]["designation"]}__{res_dic[key]["keyDB"]}'
         description = f'func:{res_dic[key]["ATB_groups"]},mechanism:{res_dic[key]["mechanism_groups"]},' \
                       f'id:{res_dic[key]["pc_identity"]},cov:{res_dic[key]["pc_coverage"]},' \
                       f'dep:{res_dic[key]["mean_depth"]}'
@@ -534,16 +533,16 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
         if record:
             csv_dic[col_name] = val_name
 
-            dna_sequence = SeqRecord(res_dic[key]['dna_sequence'].seq, id=sequence_ID, name=sequence_ID,
+            dna_sequence = SeqRecord(res_dic[key]['dna_sequence'].seq, id=sequence_id, name=sequence_id,
                                      description=description)
-            dnaRecords.append(dna_sequence)
+            dna_records.append(dna_sequence)
             if res_dic[key]['prot_sequence'] != '.' and res_dic[key]['prot_sequence'] != '.':
-                prot_sequence = SeqRecord(Seq(res_dic[key]['prot_sequence']), id=sequence_ID, name=sequence_ID,
+                prot_sequence = SeqRecord(Seq(res_dic[key]['prot_sequence']), id=sequence_id, name=sequence_id,
                                           description=description)
-                protRecords.append(prot_sequence)
+                prot_records.append(prot_sequence)
 
-    SeqIO.write(dnaRecords, open(os.path.join(out_dir, f'results_{dt_basename}.fna'), 'w'), 'fasta')
-    SeqIO.write(protRecords, open(os.path.join(out_dir, f'results_{dt_basename}.faa'), 'w'), 'fasta')
+    SeqIO.write(dna_records, open(os.path.join(out_dir, f'results_{dt_basename}.fna'), 'w'), 'fasta')
+    SeqIO.write(prot_records, open(os.path.join(out_dir, f'results_{dt_basename}.faa'), 'w'), 'fasta')
 
     df = pd.DataFrame(csv_dic, index=[sample_id, ])
     df.sort_index(axis=1, inplace=True)
@@ -552,15 +551,15 @@ def write_summary_result(res_dic, out_dir, dt_basename, sample_id):
     for key in csv_dic.keys():
         keys = key.split('::')
         try:
-            xlsDic[keys[0]]['::'.join(keys[1:])] = csv_dic[key]
+            xls_dic[keys[0]]['::'.join(keys[1:])] = csv_dic[key]
         except KeyError:
-            xlsDic[keys[0]] = {'::'.join(keys[1:]): csv_dic[key]}
+            xls_dic[keys[0]] = {'::'.join(keys[1:]): csv_dic[key]}
 
-    sheet_names = list(xlsDic.keys())
+    sheet_names = list(xls_dic.keys())
     sheet_names.sort()
     writer = pd.ExcelWriter(os.path.join(out_dir, f'summary_results_{dt_basename}.xlsx'))
     for n, sheet_name in enumerate(sheet_names):
-        df = pd.DataFrame(xlsDic[sheet_name], index=[sample_id, ])
+        df = pd.DataFrame(xls_dic[sheet_name], index=[sample_id, ])
         df.sort_index(axis=1, inplace=True)
         df.to_excel(writer, sheet_name, index=False)
     writer.save()
@@ -581,7 +580,7 @@ def pre_main(args):
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
     log_message = ""
-
+    print(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup)
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
@@ -590,7 +589,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
     set_dic = read_setting_file(setting_file)
     sample_dic, sample_list = read_sample_file(sample_file)
     species = sample_dic[sample_id]
-    dt_basename = dt_base_file = ""
+    dt_basename = ""
     if species.lower() in set_dic:
         set_species = set_dic[species.lower()]
         dt_basename_pre_split = str(*set_species[dt_base_type]).split("_")
@@ -604,7 +603,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, su
             if "armDB_ariba" in str(file):
                 dt_basename = str(file)
                 dt_basename_split = dt_basename.split("_")
-        dt_base_file = os.path.join(db_path, "dbARM", "subsets", "armDB_{0}_all.tsv".format(dt_basename_split[2]))
+        dt_base_file = os.path.join(db_path, "dbARM", "subsets", f"armDB_{dt_basename_split[2]}_all.tsv")
 
     tsv_file = os.path.join(out_dir, dt_basename, 'report.tsv')
     gen_file = os.path.join(out_dir, dt_basename, 'assembled_genes.fa.gz')
