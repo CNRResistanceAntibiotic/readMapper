@@ -118,9 +118,11 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
         jobs = []
         for call_ariba_file in call_ariba_files:
             if sample_id in call_ariba_file:
+                bash_file = os.path.join(wk_dir, call_ariba_file)
                 if "__calling__mlst" in call_ariba_file:
-                    bash_file = os.path.join(wk_dir, call_ariba_file)
                     schema_mlst = call_ariba_file.split("__calling__mlst_")[1].split(".")[0]
+                    manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst")
+                    """
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "mlst"),
@@ -128,8 +130,10 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
                     )
                     jobs.append(p)
                     p.start()
-                if "__calling__arm" in call_ariba_file:
-                    bash_file = os.path.join(wk_dir, call_ariba_file)
+                    """
+                elif "__calling__arm" in call_ariba_file:
+                    manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm")
+                    """
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "arm"),
@@ -137,8 +141,10 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
                     )
                     jobs.append(p)
                     p.start()
-                if "__calling__rep" in call_ariba_file:
-                    bash_file = os.path.join(wk_dir, call_ariba_file)
+                    """
+                elif "__calling__rep" in call_ariba_file:
+                    manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep")
+                    """
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "rep"),
@@ -146,8 +152,10 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
                     )
                     jobs.append(p)
                     p.start()
-                if "__calling__vir" in call_ariba_file:
-                    bash_file = os.path.join(wk_dir, call_ariba_file)
+                    """
+                elif "__calling__vir" in call_ariba_file:
+                    manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir")
+                    """
                     p = multiprocessing.Process(
                         target=manage_ariba,
                         args=(wk_dir, sample_id, sample_file, setting_file, db_path, bash_file, "vir"),
@@ -155,10 +163,12 @@ def main(setting_file, wk_dir, sample_file, initial, db_path):
                     )
                     jobs.append(p)
                     p.start()
-
+                    """
+        """
         # wait multiple jobs
         for job in jobs:
             job.join()
+        """
         print("Write a report in docx file \n")
         write_docx.main(wk_dir, initial, sample_id)
         print("~~~~~~~~~~~~~~~~~~~~~~~~~~~\n")
