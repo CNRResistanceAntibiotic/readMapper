@@ -62,6 +62,9 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
 
     tsv_file = os.path.join(out_dir, dt_basename, 'mlst_report.tsv')
 
+    # rename file
+    os.rename(os.path.join(out_dir, dt_basename, 'report.tsv'), os.path.join(out_dir, dt_basename, 'mlst_full_report.tsv'))
+
     res_dic = Odict()
     res_dic['sample_id'] = sample_id
     res_dic['mlst_name'] = dt_basename.split('_')[1]
