@@ -66,6 +66,8 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     for file in os.listdir(os.path.join(out_dir, dt_basename)):
         file_p = os.path.join(os.path.join(out_dir, dt_basename), file)
         if os.path.isfile(file_p):
+            if file == "report.tsv":
+                file = "full_report.tsv"
             os.rename(file_p, os.path.join(out_dir, dt_basename, f"mlst_{subgroup}_{file}"))
 
     res_dic = Odict()
