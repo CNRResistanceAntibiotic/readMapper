@@ -60,8 +60,7 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
     set_species = set_dic[species.lower()]
     dt_basename = "{0}_{1}".format(*set_species[dt_base_type], subgroup)
 
-    tsv_file = os.path.join(out_dir, dt_basename, 'mlst_report.tsv')
-
+    tsv_file = ""
     # rename file
     for file in os.listdir(os.path.join(out_dir, dt_basename)):
         file_p = os.path.join(os.path.join(out_dir, dt_basename), file)
@@ -69,7 +68,8 @@ def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, subgroup):
             if file == "report.tsv":
                 file = "full_report.tsv"
             os.rename(file_p, os.path.join(out_dir, dt_basename, f"mlst_{subgroup}_{file}"))
-
+            if file == "mlst_report.tsv":
+                tsv_file = os.path.join(out_dir, dt_basename, f"mlst_{subgroup}_{file}")
     res_dic = Odict()
     res_dic['sample_id'] = sample_id
     res_dic['mlst_name'] = dt_basename.split('_')[1]

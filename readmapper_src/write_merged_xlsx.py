@@ -176,7 +176,7 @@ def main(wk_dir, initial, samplefile):
         for sample_id in sample_dic.keys():
             if data_type == 'mlst':
                 try:
-                    st_filename_list = glob.glob(os.path.join(wk_dir, sample_id, 'mlst_report_*.tsv'))
+                    st_filename_list = glob.glob(os.path.join(wk_dir, sample_id, '*_mlst_report_*.tsv'))
                     st_dic = read_mlst_results_tsv_file(st_filename_list)
                 except IndexError:
                     st_dic = {}

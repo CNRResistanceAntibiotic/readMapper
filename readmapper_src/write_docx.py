@@ -48,13 +48,10 @@ def read_mlst_results_tsv_file(filename_list):
     data_dic = {}
     for filename in filename_list:
         if os.path.exists(filename):
-
             with open(filename, 'r') as tsv_file:
-
                 reader = csv.DictReader(tsv_file, delimiter='\t')
                 for row in reader:
                     data_dic[row["mlst_name"]] = row
-
         else:
             print(f'\nNo MLST result file {filename_list}\n')
     return data_dic
@@ -200,7 +197,7 @@ def main(wk_dir, initial, sample_id):
     species = read_species(sample_file, sample_id, sep='\t')
     st_hash = {}
     try:
-        st_filename_list = glob.glob(os.path.join(wk_dir, 'mlst_report_*.tsv'))
+        st_filename_list = glob.glob(os.path.join(wk_dir, '*_mlst_report_*.tsv'))
         st_dic = read_mlst_results_tsv_file(st_filename_list)
         for key, value in st_dic.items():
             count_gene = 1
