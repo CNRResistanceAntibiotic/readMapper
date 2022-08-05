@@ -91,10 +91,9 @@ def translate_dna(dna_object, table='Bacterial', cds=True):
 def load_vir_arm_db(inp_file):
     log_message = ""
     arm_dic = {}
-    with open(inp_file, 'r') as f:
+    with open(inp_file, 'r', encoding='utf-8') as f:
         header = ""
-        n = 0
-        for line in f.readlines():
+        for n, line in enumerate(f):
             line = line.strip()
             if n == 0:
                 header = line.split('\t')
@@ -106,7 +105,6 @@ def load_vir_arm_db(inp_file):
                         data[key] = ''
                 key = data['key']
                 arm_dic[key] = data
-            n += 1
 
     log_message = log_message + f"\nLoading of {inp_file} done!\nNumber of records: {len(arm_dic.keys())}\n"
     return arm_dic, log_message
