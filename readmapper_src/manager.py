@@ -83,10 +83,10 @@ def manage_ariba(wk_dir, sample_id, sample_file, setting_file, db_path, bash_fil
 
     finally:
 
-        log_message = log_message + "{0} parsing done.\n".format(db_type.upper())
+        log_message = f'{log_message} {db_type.upper()} parsing done.\n'
         os.remove(bash_file)
 
-    log_message = log_message + "*********** {0} Exiting ***************\n".format(name)
+    log_message = f'{log_message}*********** {name} Exiting ***************\n'
     print(log_message, flush=True)
 
 

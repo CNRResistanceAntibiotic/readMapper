@@ -298,10 +298,8 @@ def taxon_snp(del_keys, key, species, sep=','):
             taxons = taxons + entero_bacteriaceae
         if 'enterobacter cloacae complex' in taxons:
             taxons = taxons + enterobacter_cloacae_complex
-
         if species.lower() not in taxons:
             del_keys.append(key)
-
     return del_keys
 
 
@@ -580,7 +578,6 @@ def pre_main(args):
 
 def main(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup):
     log_message = ""
-    print(sample_id, sample_file, setting_file, dt_base_type, wk_dir, db_path, subgroup)
     if sample_file == '':
         sample_file = os.path.join(wk_dir, 'sample.csv')
     if wk_dir == '':
